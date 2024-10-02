@@ -10,8 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// TODO: Sync sqlite with bigquery
-
 func getAllRecords() {
 	// Get all records from sqlite
 	doms := []types.Domain{}

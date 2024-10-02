@@ -8,18 +8,11 @@ import (
 	"sync"
 
 	"domwalk/db"
+	"domwalk/fixtures"
 	"domwalk/types"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
-
-func clearTables() {
-	db.GormDB.Migrator().DropTable(
-		&types.Domain{}, &types.MXRecord{}, &types.ARecord{}, &types.AAAARecord{}, &types.SOARecord{},
-		&types.WebRedirect{}, &types.CertSAN{}, &types.Sitemap{}, &types.SitemapWebDomain{},
-		&types.SitemapContactDomain{},
-	)
-}
 
 func main() {
 	// Add flags for number of workers, whether or not to clear local db
@@ -29,7 +22,7 @@ func main() {
 	flag.StringVar(&input_file, "file", "", "File to read domains from")
 	flag.Parse()
 	if *clr {
-		clearTables()
+		fixtures.ClearTables()
 	}
 	if input_file == "" {
 		log.Fatal("File flag is required")
