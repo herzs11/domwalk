@@ -28,18 +28,18 @@ type SitemapIndex struct {
 }
 
 type Sitemap struct {
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	DomainName string `json:"domainName,omitempty"`
-	Sitemap    string `json:"sitemap,omitempty"`
+	CreatedAt  time.Time `bigquery:"created_at"`
+	UpdatedAt  time.Time `bigquery:"updated_at"`
+	DomainName string    `json:"domainName,omitempty" bigquery:"domain_name"`
+	Sitemap    string    `json:"sitemap,omitempty" bigquery:"sitemap"`
 }
 
 type SitemapDomain struct {
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	DomainName        string `json:"reqDomainName,omitempty"`
-	MatchedDomainName string `json:"sitemapDomainName,omitempty"`
-	Domain            Domain `json:"sitemapDomain,omitempty" gorm:"foreignKey:MatchedDomainName"`
+	CreatedAt         time.Time `bigquery:"created_at"`
+	UpdatedAt         time.Time `bigquery:"updated_at"`
+	DomainName        string    `json:"reqDomainName,omitempty" bigquery:"domain_name"`
+	MatchedDomainName string    `json:"sitemapDomainName,omitempty" bigquery:"matched_domain_name"`
+	Domain            Domain    `json:"sitemapDomain,omitempty" gorm:"foreignKey:MatchedDomainName" bigquery:"-"`
 }
 
 type SitemapWebDomain struct {
@@ -278,7 +278,7 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 		}
 
 		// Find email addresses in the body
-		emailRegex := regexp.MustCompile(`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`)
+		emailRegex := regexp.MustCompile(`(?:^|\s|,|;)([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|net|org|edu|gov|info|biz|io|co\.uk|co|us|de|ca)(?:\s|,|;|$))`)
 		emails := emailRegex.FindAllString(string(body), -1)
 		for _, email := range emails {
 			dom, err := NewDomain(strings.Split(email, "@")[1])

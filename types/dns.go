@@ -5,37 +5,58 @@ import (
 	"log"
 	"time"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/miekg/dns"
 )
 
 type AAAARecord struct {
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	IPV6       string `gorm:"primaryKey"`
-	DomainName string `gorm:"primaryKey"`
+	CreatedAt  time.Time `bigquery:"created_at"`
+	UpdatedAt  time.Time `bigquery:"updated_at"`
+	IPV6       string    `gorm:"primaryKey" bigquery:"ip_v6"`
+	DomainName string    `gorm:"primaryKey" bigquery:"domain_name"`
 }
 
 type ARecord struct {
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	IP         string `gorm:"primaryKey"`
-	DomainName string `gorm:"primaryKay"`
+	CreatedAt  time.Time `bigquery:"created_at"`
+	UpdatedAt  time.Time `bigquery:"updated_at"`
+	IP         string    `gorm:"primaryKey" bigquery:"ip"`
+	DomainName string    `gorm:"primaryKey" bigquery:"domain_name"`
 }
 
 type SOARecord struct {
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	NS         string `gorm:"primaryKey"`
-	MBox       string `gorm:"primaryKey"`
-	Serial     uint32 `gorm:"primaryKey"`
-	DomainName string `gorm:"primaryKey"`
+	CreatedAt  time.Time `bigquery:"created_at"`
+	UpdatedAt  time.Time `bigquery:"updated_at"`
+	NS         string    `gorm:"primaryKey" bigquery:"ns"`
+	MBox       string    `gorm:"primaryKey" bigquery:"mbox"`
+	Serial     uint32    `gorm:"primaryKey" bigquery:"serial"`
+	DomainName string    `gorm:"primaryKey" bigquery:"domain_name"`
+}
+
+type SOARecordBQ struct {
+	CreatedAt  time.Time           `bigquery:"created_at"`
+	UpdatedAt  time.Time           `bigquery:"updated_at"`
+	NS         bigquery.NullString `gorm:"primaryKey" bigquery:"ns"`
+	MBox       bigquery.NullString `gorm:"primaryKey" bigquery:"mbox"`
+	Serial     bigquery.NullInt64  `gorm:"primaryKey" bigquery:"serial"`
+	DomainName string              `gorm:"primaryKey" bigquery:"domain_name"`
+}
+
+func (s *SOARecord) ToBQ() SOARecordBQ {
+	return SOARecordBQ{
+		CreatedAt:  s.CreatedAt,
+		UpdatedAt:  s.UpdatedAt,
+		NS:         bigquery.NullString{Valid: s.NS != "", StringVal: s.NS},
+		MBox:       bigquery.NullString{Valid: s.MBox != "", StringVal: s.MBox},
+		Serial:     bigquery.NullInt64{Valid: s.Serial != 0, Int64: int64(s.Serial)},
+		DomainName: s.DomainName,
+	}
 }
 
 type MXRecord struct {
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	Mx         string `gorm:"primaryKey"`
-	DomainName string `gorm:"primaryKey"`
+	CreatedAt  time.Time `bigquery:"created_at"`
+	UpdatedAt  time.Time `bigquery:"updated_at"`
+	Mx         string    `gorm:"primaryKey" bigquery:"mx"`
+	DomainName string    `gorm:"primaryKey" bigquery:"domain_name"`
 }
 
 var (
@@ -132,7 +153,7 @@ func queryAllServers(msg *dns.Msg) (*dns.Msg, error) {
 }
 
 func (d *Domain) GetDNSRecords() []error {
-	d.LastRandDNS = time.Now()
+	d.LastRanDns = time.Now()
 	if d.NonPublicDomain {
 		return []error{errors.New("Non public domain")}
 	}

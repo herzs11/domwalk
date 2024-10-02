@@ -5,38 +5,73 @@ import (
 	"fmt"
 	"time"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/temoto/robotstxt"
 	"github.com/weppos/publicsuffix-go/publicsuffix"
 )
 
 type Domain struct {
-	DomainName            string `json:"domainName,omitempty" gorm:"primaryKey"`
-	CreatedAt             time.Time
-	UpdatedAt             time.Time
-	NonPublicDomain       bool                   `json:"nonPublicDomain,omitempty"`
-	Hostname              string                 `json:"hostname,omitempty"`
-	Subdomain             string                 `json:"subdomain,omitempty"`
-	Suffix                string                 `json:"suffix,omitempty"`
-	SuccessfulWebLanding  bool                   `json:"successfulWebLanding,omitempty"`
-	WebRedirectURLFinal   string                 `json:"webRedirectURLFinal,omitempty"`
-	LastRanWebRedirect    time.Time              `json:"lastRanWebRedirect,omitempty"`
-	LastRandDNS           time.Time              `json:"lastRanDNS,omitempty"`
-	LastRanCertSANs       time.Time              `json:"lastRanCertSANs,omitempty"`
-	LastRanSitemapParse   time.Time              `json:"lastRanSitemapParse,omitempty"`
-	WebRedirectDomains    []WebRedirect          `json:"landedWebHost,omitempty" gorm:"foreignKey:MatchedDomainName;references:DomainName"`
-	CertSANs              []CertSAN              `json:"certSANs,omitempty" gorm:"foreignKey:MatchedDomainName;references:DomainName"`
-	ARecords              []ARecord              `gorm:"foreignKey:DomainName;references:DomainName"`
-	AAAARecords           []AAAARecord           `gorm:"foreignKey:DomainName;references:DomainName"`
-	MXRecords             []MXRecord             `gorm:"foreignKey:DomainName;references:DomainName"`
-	SOARecords            []SOARecord            `gorm:"foreignKey:DomainName;references:DomainName"`
-	Sitemaps              []*Sitemap             `json:"sitemaps,omitempty" gorm:"foreignKey:DomainName;references:DomainName"`
-	SitemapWebDomains     []SitemapWebDomain     `json:"sitemapWebDomains,omitempty" gorm:"foreignKey:MatchedDomainName;references:DomainName"`
-	SitemapContactDomains []SitemapContactDomain `json:"sitemapContactDomains,omitempty" gorm:"foreignKey:MatchedDomainName;references:DomainName"`
+	DomainName            string                 `json:"domainName,omitempty" gorm:"primaryKey" bigquery:"domain_name"`
+	CreatedAt             time.Time              `bigquery:"created_at"`
+	UpdatedAt             time.Time              `bigquery:"updated_at"`
+	NonPublicDomain       bool                   `json:"nonPublicDomain,omitempty" bigquery:"non_public_domain"`
+	Hostname              string                 `json:"hostname,omitempty" bigquery:"hostname,nullable"`
+	Subdomain             string                 `json:"subdomain,omitempty" bigquery:"subdomain,nullable"`
+	Suffix                string                 `json:"suffix,omitempty" bigquery:"suffix,nullable"`
+	SuccessfulWebLanding  bool                   `json:"successfulWebLanding,omitempty" bigquery:"successful_web_landing"`
+	WebRedirectURLFinal   string                 `json:"webRedirectURLFinal,omitempty" bigquery:"web_redirect_url_final,nullable"`
+	LastRanWebRedirect    time.Time              `json:"lastRanWebRedirect,omitempty" bigquery:"last_ran_web_redirect"`
+	LastRanDns            time.Time              `json:"lastRanDNS,omitempty" bigquery:"last_ran_dns"`
+	LastRanCertSans       time.Time              `json:"lastRanCertSANs,omitempty" bigquery:"last_ran_cert_sans"`
+	LastRanSitemapParse   time.Time              `json:"lastRanSitemapParse,omitempty" bigquery:"last_ran_sitemap_parse"`
+	WebRedirectDomains    []WebRedirect          `json:"landedWebHost,omitempty" gorm:"foreignKey:MatchedDomainName;references:DomainName" bigquery:"-"`
+	CertSANs              []CertSAN              `json:"certSANs,omitempty" gorm:"foreignKey:MatchedDomainName;references:DomainName" bigquery:"-"`
+	ARecords              []ARecord              `gorm:"foreignKey:DomainName;references:DomainName"  bigquery:"-"`
+	AAAARecords           []AAAARecord           `gorm:"foreignKey:DomainName;references:DomainName" bigquery:"-"`
+	MXRecords             []MXRecord             `gorm:"foreignKey:DomainName;references:DomainName" bigquery:"-"`
+	SOARecords            []SOARecord            `gorm:"foreignKey:DomainName;references:DomainName" bigquery:"-"`
+	Sitemaps              []*Sitemap             `json:"sitemaps,omitempty" gorm:"foreignKey:DomainName;references:DomainName" bigquery:"-"`
+	SitemapWebDomains     []SitemapWebDomain     `json:"sitemapWebDomains,omitempty" gorm:"foreignKey:MatchedDomainName;references:DomainName" bigquery:"-"`
+	SitemapContactDomains []SitemapContactDomain `json:"sitemapContactDomains,omitempty" gorm:"foreignKey:MatchedDomainName;references:DomainName" bigquery:"-"`
 
-	sitemapURLs  []string `json:"-" gorm:"-"`
-	contactPages []string `json:"-" gorm:"-"`
+	sitemapURLs  []string `gorm:"-"`
+	contactPages []string `gorm:"-"`
 
-	*robotstxt.RobotsData `json:"-" gorm:"-:all"`
+	*robotstxt.RobotsData `gorm:"-:all"`
+}
+
+type DomainBQ struct {
+	DomainName           string              `bigquery:"domain_name"`
+	CreatedAt            time.Time           `bigquery:"created_at"`
+	UpdatedAt            time.Time           `bigquery:"updated_at"`
+	NonPublicDomain      bool                `bigquery:"non_public_domain"`
+	Hostname             bigquery.NullString `bigquery:"hostname"`
+	Subdomain            bigquery.NullString `bigquery:"subdomain"`
+	Suffix               bigquery.NullString `bigquery:"suffix"`
+	SuccessfulWebLanding bool                `bigquery:"successful_web_landing"`
+	WebRedirectURLFinal  bigquery.NullString `bigquery:"web_redirect_url_final"`
+	LastRanWebRedirect   time.Time           `bigquery:"last_ran_web_redirect"`
+	LastRanDns           time.Time           `bigquery:"last_ran_dns"`
+	LastRanCertSans      time.Time           `bigquery:"last_ran_cert_sans"`
+	LastRanSitemapParse  time.Time           `bigquery:"last_ran_sitemap_parse"`
+}
+
+func (d *Domain) ToBQ() DomainBQ {
+	return DomainBQ{
+		DomainName:           d.DomainName,
+		CreatedAt:            d.CreatedAt,
+		UpdatedAt:            d.UpdatedAt,
+		NonPublicDomain:      d.NonPublicDomain,
+		Hostname:             bigquery.NullString{d.Hostname, d.Hostname != ""},
+		Subdomain:            bigquery.NullString{d.Subdomain, d.Subdomain != ""},
+		Suffix:               bigquery.NullString{d.Suffix, d.Suffix != ""},
+		SuccessfulWebLanding: d.SuccessfulWebLanding,
+		WebRedirectURLFinal:  bigquery.NullString{d.WebRedirectURLFinal, d.WebRedirectURLFinal != ""},
+		LastRanWebRedirect:   d.LastRanWebRedirect,
+		LastRanDns:           d.LastRanDns,
+		LastRanCertSans:      d.LastRanCertSans,
+		LastRanSitemapParse:  d.LastRanSitemapParse,
+	}
 }
 
 func (d *Domain) parseDomain() error {

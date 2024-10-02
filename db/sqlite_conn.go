@@ -1,11 +1,14 @@
 package db
 
 import (
+	"sync"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 var GormDB *gorm.DB
+var Mut *sync.Mutex
 
 func init() {
 	var err error
@@ -13,4 +16,5 @@ func init() {
 	if err != nil {
 		panic("failed to connect database")
 	}
+	Mut = &sync.Mutex{}
 }

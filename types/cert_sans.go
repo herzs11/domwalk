@@ -11,15 +11,15 @@ import (
 )
 
 type CertSAN struct {
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	DomainName        string `json:"reqDomainName,omitempty"`
-	MatchedDomainName string `json:"certSanDomainName,omitempty"`
-	Domain            Domain `json:"certSanDomain,omitempty" gorm:"foreignKey:MatchedDomainName"`
+	CreatedAt         time.Time `bigquery:"created_at"`
+	UpdatedAt         time.Time `bigquery:"updated_at"`
+	DomainName        string    `json:"reqDomainName,omitempty" bigquery:"domain_name"`
+	MatchedDomainName string    `json:"certSanDomainName,omitempty" bigquery:"matched_domain_name"`
+	Domain            Domain    `json:"certSanDomain,omitempty" gorm:"foreignKey:MatchedDomainName" bigquery:"-"`
 }
 
 func (d *Domain) GetCertSANs() error {
-	d.LastRanCertSANs = time.Now()
+	d.LastRanCertSans = time.Now()
 	proxyURL, err := url.Parse(os.Getenv("HTTPS_PROXY"))
 	if err != nil {
 		panic(err)

@@ -12,11 +12,11 @@ import (
 )
 
 type WebRedirect struct {
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	DomainName        string `json:"reqDomainName,omitempty"`
-	MatchedDomainName string `json:"webRedirectDomainName,omitempty"`
-	Domain            Domain `json:"webRedirectDomain,omitempty" gorm:"foreignKey:MatchedDomainName"`
+	CreatedAt         time.Time `bigquery:"created_at"`
+	UpdatedAt         time.Time `bigquery:"updated_at"`
+	DomainName        string    `json:"reqDomainName,omitempty" bigquery:"domain_name"`
+	MatchedDomainName string    `json:"webRedirectDomainName,omitempty" bigquery:"matched_domain_name"`
+	Domain            Domain    `json:"webRedirectDomain,omitempty" gorm:"foreignKey:MatchedDomainName" bigquery:"-"`
 }
 
 func (d *Domain) GetRedirectDomains() error {
