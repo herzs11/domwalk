@@ -34,22 +34,6 @@ type Sitemap struct {
 	Sitemap    string    `json:"sitemap,omitempty" bigquery:"sitemap"`
 }
 
-type SitemapDomain struct {
-	CreatedAt         time.Time `bigquery:"created_at"`
-	UpdatedAt         time.Time `bigquery:"updated_at"`
-	DomainName        string    `json:"reqDomainName,omitempty" bigquery:"domain_name"`
-	MatchedDomainName string    `json:"sitemapDomainName,omitempty" bigquery:"matched_domain_name"`
-	Domain            Domain    `json:"sitemapDomain,omitempty" gorm:"foreignKey:MatchedDomainName" bigquery:"-"`
-}
-
-type SitemapWebDomain struct {
-	SitemapDomain
-}
-
-type SitemapContactDomain struct {
-	SitemapDomain
-}
-
 func (d *Domain) GetDomainsFromSitemap() error {
 	if !d.SuccessfulWebLanding {
 		return fmt.Errorf("Domain has not successfully landed on the web")
@@ -223,7 +207,7 @@ func (d *Domain) GetWebDomainsFromSitemap() {
 		}
 		if _, exists := domsFound[dom.DomainName]; !exists {
 			domsFound[dom.DomainName] = true
-			sd := SitemapWebDomain{SitemapDomain{DomainName: d.DomainName, Domain: *dom}}
+			sd := MatchedDomain{}
 			d.SitemapWebDomains = append(d.SitemapWebDomains, sd)
 		}
 	}

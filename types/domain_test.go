@@ -9,14 +9,14 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	ClearTables()
+	// ClearTables()
 	CreateTables()
 	m.Run()
 }
 
 func TestDomains(t *testing.T) {
 	doms := []string{
-		"google.com",
+		// "google.com",
 		"levi.com",
 		"cetac.com",
 	}
@@ -31,10 +31,16 @@ func TestDomains(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error parsing domain %s: %s\n", dom, err)
 		}
-		d.GetDNSRecords()
-		d.GetRedirectDomains()
+		// d.GetDNSRecords()
+		// d.GetRedirectDomains()
 		d.GetCertSANs()
-		d.GetDomainsFromSitemap()
+		d.CertSANs = append(
+			d.CertSANs, MatchedDomain{
+				DomainName:        d.DomainName,
+				MatchedDomainName: "teledynecetac.com",
+			},
+		)
+		// d.GetDomainsFromSitemap()
 		db.GormDB.Clauses(
 			clause.OnConflict{
 				UpdateAll: true,

@@ -10,14 +10,6 @@ import (
 	"time"
 )
 
-type CertSAN struct {
-	CreatedAt         time.Time `bigquery:"created_at"`
-	UpdatedAt         time.Time `bigquery:"updated_at"`
-	DomainName        string    `json:"reqDomainName,omitempty" bigquery:"domain_name"`
-	MatchedDomainName string    `json:"certSanDomainName,omitempty" bigquery:"matched_domain_name"`
-	Domain            Domain    `json:"certSanDomain,omitempty" gorm:"foreignKey:MatchedDomainName" bigquery:"-"`
-}
-
 func (d *Domain) GetCertSANs() error {
 	d.LastRanCertSans = time.Now()
 	proxyURL, err := url.Parse(os.Getenv("HTTPS_PROXY"))
@@ -85,7 +77,7 @@ func (d *Domain) GetCertSANs() error {
 		}
 		if _, exists := domsFound[dm.DomainName]; !exists {
 			domsFound[dm.DomainName] = true
-			certSAN := CertSAN{DomainName: dom, Domain: *dm}
+			certSAN := MatchedDomain{DomainName: dom, Domain: *dm}
 			d.CertSANs = append(d.CertSANs, certSAN)
 		}
 	}

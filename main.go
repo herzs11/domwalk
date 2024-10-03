@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"domwalk/db"
-	"domwalk/fixtures"
 	"domwalk/types"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -22,7 +21,7 @@ func main() {
 	flag.StringVar(&input_file, "file", "", "File to read domains from")
 	flag.Parse()
 	if *clr {
-		fixtures.ClearTables()
+		types.ClearTables()
 	}
 	if input_file == "" {
 		log.Fatal("File flag is required")
@@ -44,7 +43,7 @@ func main() {
 
 	err = db.GormDB.AutoMigrate(
 		&types.Domain{}, &types.MXRecord{}, &types.ARecord{}, &types.AAAARecord{}, &types.SOARecord{},
-		&types.WebRedirect{}, &types.CertSAN{}, &types.Sitemap{}, &types.SitemapWebDomain{},
+		&types.WebRedirect{}, &types.MatchedDomain{}, &types.Sitemap{}, &types.SitemapWebDomain{},
 		&types.SitemapContactDomain{},
 	)
 	if err != nil {

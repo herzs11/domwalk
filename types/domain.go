@@ -25,7 +25,7 @@ type Domain struct {
 	LastRanCertSans       time.Time              `json:"lastRanCertSANs,omitempty" bigquery:"last_ran_cert_sans"`
 	LastRanSitemapParse   time.Time              `json:"lastRanSitemapParse,omitempty" bigquery:"last_ran_sitemap_parse"`
 	WebRedirectDomains    []WebRedirect          `json:"landedWebHost,omitempty" gorm:"foreignKey:MatchedDomainName;references:DomainName" bigquery:"-"`
-	CertSANs              []CertSAN              `json:"certSANs,omitempty" gorm:"foreignKey:MatchedDomainName;references:DomainName" bigquery:"-"`
+	CertSANs              []MatchedDomain        `json:"certSANs,omitempty" gorm:"foreignKey:DomainName" bigquery:"-"`
 	ARecords              []ARecord              `gorm:"foreignKey:DomainName;references:DomainName"  bigquery:"-"`
 	AAAARecords           []AAAARecord           `gorm:"foreignKey:DomainName;references:DomainName" bigquery:"-"`
 	MXRecords             []MXRecord             `gorm:"foreignKey:DomainName;references:DomainName" bigquery:"-"`

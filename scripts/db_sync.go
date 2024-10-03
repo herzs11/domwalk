@@ -40,7 +40,7 @@ func main() {
 	}
 	loadToBigQuery(domsToUpload, "domains")
 
-	csan := []types.CertSAN{}
+	csan := []types.MatchedDomain{}
 	db.GormDB.Find(&csan)
 	loadToBigQuery(csan, "cert_sans")
 
