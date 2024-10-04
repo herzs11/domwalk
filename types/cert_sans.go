@@ -10,12 +10,8 @@ import (
 	"time"
 )
 
-type CertSAN struct {
-	CreatedAt         time.Time `bigquery:"created_at"`
-	UpdatedAt         time.Time `bigquery:"updated_at"`
-	DomainName        string    `json:"reqDomainName,omitempty" bigquery:"domain_name"`
-	MatchedDomainName string    `json:"certSanDomainName,omitempty" bigquery:"matched_domain_name"`
-	Domain            Domain    `json:"certSanDomain,omitempty" gorm:"foreignKey:MatchedDomainName" bigquery:"-"`
+type CertSansDomain struct {
+	MatchedDomain
 }
 
 func (d *Domain) GetCertSANs() error {
@@ -85,7 +81,7 @@ func (d *Domain) GetCertSANs() error {
 		}
 		if _, exists := domsFound[dm.DomainName]; !exists {
 			domsFound[dm.DomainName] = true
-			certSAN := CertSAN{DomainName: dom, Domain: *dm}
+			certSAN := CertSansDomain{MatchedDomain{DomainName: dom, Domain: *dm}}
 			d.CertSANs = append(d.CertSANs, certSAN)
 		}
 	}

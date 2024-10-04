@@ -34,20 +34,12 @@ type Sitemap struct {
 	Sitemap    string    `json:"sitemap,omitempty" bigquery:"sitemap"`
 }
 
-type SitemapDomain struct {
-	CreatedAt         time.Time `bigquery:"created_at"`
-	UpdatedAt         time.Time `bigquery:"updated_at"`
-	DomainName        string    `json:"reqDomainName,omitempty" bigquery:"domain_name"`
-	MatchedDomainName string    `json:"sitemapDomainName,omitempty" bigquery:"matched_domain_name"`
-	Domain            Domain    `json:"sitemapDomain,omitempty" gorm:"foreignKey:MatchedDomainName" bigquery:"-"`
+type SitemapContactDomain struct {
+	MatchedDomain
 }
 
 type SitemapWebDomain struct {
-	SitemapDomain
-}
-
-type SitemapContactDomain struct {
-	SitemapDomain
+	MatchedDomain
 }
 
 func (d *Domain) GetDomainsFromSitemap() error {
@@ -221,9 +213,12 @@ func (d *Domain) GetWebDomainsFromSitemap() {
 		if err != nil {
 			log.Println(err)
 		}
+		if d.DomainName == dom.DomainName {
+			continue
+		}
 		if _, exists := domsFound[dom.DomainName]; !exists {
 			domsFound[dom.DomainName] = true
-			sd := SitemapWebDomain{SitemapDomain{DomainName: d.DomainName, Domain: *dom}}
+			sd := SitemapWebDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dom}}
 			d.SitemapWebDomains = append(d.SitemapWebDomains, sd)
 		}
 	}
@@ -285,9 +280,12 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 			if err != nil {
 				log.Println(err)
 			}
+			if d.DomainName == dom.DomainName {
+				continue
+			}
 			if _, exists := domsFound[dom.DomainName]; !exists {
 				domsFound[dom.DomainName] = true
-				sd := SitemapContactDomain{SitemapDomain{DomainName: d.DomainName, Domain: *dom}}
+				sd := SitemapContactDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dom}}
 				d.SitemapContactDomains = append(d.SitemapContactDomains, sd)
 			}
 		}
