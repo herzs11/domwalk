@@ -5,90 +5,109 @@ import (
 	"fmt"
 	"log"
 
+	"cloud.google.com/go/bigquery"
 	"domwalk/db"
 	"domwalk/types"
-	"gorm.io/gorm"
 )
 
-func getAllRecords() {
-	// Get all records from sqlite
-	doms := []types.Domain{}
-	err := db.GormDB.Find(&doms).Error
-	if err != nil {
-		log.Fatalf("Failed to get rows: %v", err)
-	}
-	stmt := &gorm.Statement{DB: db.GormDB}
-	err = stmt.Parse(&doms)
-	if err != nil {
-		log.Fatalf("Failed to parse model: %v", err)
-	}
-	fmt.Println(stmt.Schema.Table)
-
-}
+var dataset *bigquery.Dataset
 
 func main() {
 	err := db.CreateBigQueryConn()
 	if err != nil {
 		log.Fatal(err)
 	}
-	getAllRecords()
-	dom := []types.Domain{}
-	db.GormDB.Find(&dom)
-	var domsToUpload []types.DomainBQ
-	for _, d := range dom {
-		domsToUpload = append(domsToUpload, d.ToBQ())
-	}
-	loadToBigQuery(domsToUpload, "domains")
+	dataset = db.BQConn.Dataset("domwalk")
+	defer db.BQConn.Close()
 
-	csan := []types.MatchedDomain{}
+	dom := []types.Domain{}
+	if err := truncateTable("domains"); err != nil {
+		log.Fatalf("Failed to truncate table: %v", err)
+	}
+	db.GormDB.Find(&dom)
+	for _, d := range dom {
+		loadToBigQuery(d.ToBQ(), "domains")
+	}
+
+	csan := []types.CertSansDomain{}
+	if err := truncateTable("cert_sans_domains"); err != nil {
+		log.Fatalf("Failed to truncate table: %v", err)
+	}
 	db.GormDB.Find(&csan)
-	loadToBigQuery(csan, "cert_sans")
+	for _, c := range csan {
+		loadToBigQuery(c, "cert_sans_domains")
+	}
 
 	mx := []types.MXRecord{}
+	if err := truncateTable("mx_records"); err != nil {
+		log.Fatalf("Failed to truncate table: %v", err)
+	}
 	db.GormDB.Find(&mx)
-	loadToBigQuery(mx, "mx_records")
+	for _, m := range mx {
+		loadToBigQuery(m, "mx_records")
+	}
 
 	a := []types.ARecord{}
+	if err := truncateTable("a_records"); err != nil {
+		log.Fatalf("Failed to truncate table: %v", err)
+	}
 	db.GormDB.Find(&a)
-	loadToBigQuery(a, "a_records")
+	for _, ip := range a {
+		loadToBigQuery(ip, "a_records")
+	}
 
 	aaaa := []types.AAAARecord{}
+	if err := truncateTable("aaaa_records"); err != nil {
+		log.Fatalf("Failed to truncate table: %v", err)
+	}
 	db.GormDB.Find(&aaaa)
 	loadToBigQuery(aaaa, "aaaa_records")
 
 	soa := []types.SOARecord{}
+	if err := truncateTable("soa_records"); err != nil {
+		log.Fatalf("Failed to truncate table: %v", err)
+	}
 	db.GormDB.Find(&soa)
 	loadToBigQuery(soa, "soa_records")
 
-	web := []types.WebRedirect{}
+	web := []types.WebRedirectDomain{}
+	if err := truncateTable("web_redirects"); err != nil {
+		log.Fatalf("Failed to truncate table: %v", err)
+	}
 	db.GormDB.Find(&web)
 	loadToBigQuery(web, "web_redirects")
 
 	sitemap := []types.Sitemap{}
+	if err := truncateTable("sitemaps"); err != nil {
+		log.Fatalf("Failed to truncate table: %v", err)
+	}
 	db.GormDB.Find(&sitemap)
 	loadToBigQuery(sitemap, "sitemaps")
 
 	sitemapWeb := []types.SitemapWebDomain{}
+	if err := truncateTable("sitemap_web_domains"); err != nil {
+		log.Fatalf("Failed to truncate table: %v", err)
+	}
 	db.GormDB.Find(&sitemapWeb)
 	loadToBigQuery(sitemapWeb, "sitemap_web_domains")
 
 	sitemapContact := []types.SitemapContactDomain{}
+	if err := truncateTable("sitemap_contact_domains"); err != nil {
+		log.Fatalf("Failed to truncate table: %v", err)
+	}
 	db.GormDB.Find(&sitemapContact)
 	loadToBigQuery(sitemapContact, "sitemap_contact_domains")
 
-	defer db.BQConn.Close()
 }
 
 func loadToBigQuery(model interface{}, tableName string) {
-	dataset := db.BQConn.Dataset("domwalk")
-	if err := truncateTable(tableName); err != nil {
-		log.Fatalf("Failed to truncate table: %v", err)
-	}
+
 	ctx := context.Background()
 	table := dataset.Table(tableName)
 	inserter := table.Inserter()
 	if err := inserter.Put(ctx, model); err != nil {
 		log.Printf("Failed to insert data into BigQuery table: %v\n", err)
+		return
 	}
 
 	fmt.Printf("Data loaded into BigQuery table: %s.%s.%s\n", "unum-marketing-data-assets", "domwalk", tableName)

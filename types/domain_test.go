@@ -1,50 +1,61 @@
 package types
 
 import (
+	"log"
 	"testing"
+	"time"
 
 	"domwalk/db"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 func TestMain(m *testing.M) {
-	// ClearTables()
+	ClearTables()
 	CreateTables()
 	m.Run()
+	gdb, err := db.GormDB.DB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	gdb.Close()
 }
 
 func TestDomains(t *testing.T) {
 	doms := []string{
-		// "google.com",
+		// "hanselhonda.com",
 		"levi.com",
-		"cetac.com",
+		// "cetac.com",
 	}
 
 	for _, dom := range doms {
-		d, err := NewDomain(dom)
+		d, err := NewDomain("levistrauss.com")
 		// skip domains that are already in the table
-		// if db.GormDB.First(&types.Domain{}, "domain_name = ?", d.DomainName).Error == nil {
-		// 	log.Printf("Domain %s already in database\n", domain)
-		// 	continue
-		// }
 		if err != nil {
 			t.Errorf("Error parsing domain %s: %s\n", dom, err)
 		}
-		// d.GetDNSRecords()
-		// d.GetRedirectDomains()
+		d.GetDNSRecords()
+		d.GetRedirectDomains()
 		d.GetCertSANs()
+		d.GetDomainsFromSitemap()
 		d.CertSANs = append(
-			d.CertSANs, MatchedDomain{
-				DomainName:        d.DomainName,
-				MatchedDomainName: "teledynecetac.com",
+			d.CertSANs, CertSansDomain{
+				MatchedDomain{
+					DomainName:        d.DomainName,
+					MatchedDomainName: "teledynecetac.com",
+				},
 			},
 		)
-		// d.GetDomainsFromSitemap()
-		db.GormDB.Clauses(
-			clause.OnConflict{
-				UpdateAll: true,
-			},
-		).Session(&gorm.Session{FullSaveAssociations: true}).Create(&d)
+		db.Mut.Lock()
+
+		db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(d)
+		time.Sleep(1 * time.Second)
+		d2, err := NewDomain(dom)
+		if err != nil {
+			t.Errorf("Error parsing domain %s: %s\n", d2.DomainName, err)
+		}
+		d2.GetCertSANs()
+		db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(d2)
+		db.Mut.Unlock()
 	}
+
 }

@@ -11,12 +11,8 @@ import (
 	"github.com/weppos/publicsuffix-go/publicsuffix"
 )
 
-type WebRedirect struct {
-	CreatedAt         time.Time `bigquery:"created_at"`
-	UpdatedAt         time.Time `bigquery:"updated_at"`
-	DomainName        string    `json:"reqDomainName,omitempty" bigquery:"domain_name"`
-	MatchedDomainName string    `json:"webRedirectDomainName,omitempty" bigquery:"matched_domain_name"`
-	Domain            Domain    `json:"webRedirectDomain,omitempty" gorm:"foreignKey:MatchedDomainName" bigquery:"-"`
+type WebRedirectDomain struct {
+	MatchedDomain
 }
 
 func (d *Domain) GetRedirectDomains() error {
@@ -73,7 +69,7 @@ func (d *Domain) GetRedirectDomains() error {
 		if err != nil {
 			log.Println(err)
 		}
-		wr := WebRedirect{DomainName: d.DomainName, Domain: *rdom}
+		wr := WebRedirectDomain{MatchedDomain{DomainName: d.DomainName, Domain: *rdom}}
 		d.WebRedirectDomains = append(d.WebRedirectDomains, wr)
 	}
 	return nil

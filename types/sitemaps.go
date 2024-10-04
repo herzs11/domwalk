@@ -34,6 +34,14 @@ type Sitemap struct {
 	Sitemap    string    `json:"sitemap,omitempty" bigquery:"sitemap"`
 }
 
+type SitemapContactDomain struct {
+	MatchedDomain
+}
+
+type SitemapWebDomain struct {
+	MatchedDomain
+}
+
 func (d *Domain) GetDomainsFromSitemap() error {
 	if !d.SuccessfulWebLanding {
 		return fmt.Errorf("Domain has not successfully landed on the web")
@@ -205,9 +213,12 @@ func (d *Domain) GetWebDomainsFromSitemap() {
 		if err != nil {
 			log.Println(err)
 		}
+		if d.DomainName == dom.DomainName {
+			continue
+		}
 		if _, exists := domsFound[dom.DomainName]; !exists {
 			domsFound[dom.DomainName] = true
-			sd := MatchedDomain{}
+			sd := SitemapWebDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dom}}
 			d.SitemapWebDomains = append(d.SitemapWebDomains, sd)
 		}
 	}
@@ -269,9 +280,12 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 			if err != nil {
 				log.Println(err)
 			}
+			if d.DomainName == dom.DomainName {
+				continue
+			}
 			if _, exists := domsFound[dom.DomainName]; !exists {
 				domsFound[dom.DomainName] = true
-				sd := SitemapContactDomain{SitemapDomain{DomainName: d.DomainName, Domain: *dom}}
+				sd := SitemapContactDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dom}}
 				d.SitemapContactDomains = append(d.SitemapContactDomains, sd)
 			}
 		}

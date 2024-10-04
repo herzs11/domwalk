@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+type CertSansDomain struct {
+	MatchedDomain
+}
+
 func (d *Domain) GetCertSANs() error {
 	d.LastRanCertSans = time.Now()
 	proxyURL, err := url.Parse(os.Getenv("HTTPS_PROXY"))
@@ -77,7 +81,7 @@ func (d *Domain) GetCertSANs() error {
 		}
 		if _, exists := domsFound[dm.DomainName]; !exists {
 			domsFound[dm.DomainName] = true
-			certSAN := MatchedDomain{DomainName: dom, Domain: *dm}
+			certSAN := CertSansDomain{MatchedDomain{DomainName: dom, Domain: *dm}}
 			d.CertSANs = append(d.CertSANs, certSAN)
 		}
 	}
