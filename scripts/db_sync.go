@@ -20,86 +20,204 @@ func main() {
 	dataset = db.BQConn.Dataset("domwalk")
 	defer db.BQConn.Close()
 
-	dom := []types.Domain{}
-	if err := truncateTable("domains"); err != nil {
-		log.Fatalf("Failed to truncate table: %v", err)
+	tableName := "domains"
+	if err := truncateTable(tableName); err != nil {
+		log.Printf("Failed to truncate table: %v", err)
 	}
-	db.GormDB.Find(&dom)
-	for _, d := range dom {
-		loadToBigQuery(d.ToBQ(), "domains")
-	}
-
-	csan := []types.CertSansDomain{}
-	if err := truncateTable("cert_sans_domains"); err != nil {
-		log.Fatalf("Failed to truncate table: %v", err)
-	}
-	db.GormDB.Find(&csan)
-	for _, c := range csan {
-		loadToBigQuery(c, "cert_sans_domains")
-	}
-
-	mx := []types.MXRecord{}
-	if err := truncateTable("mx_records"); err != nil {
-		log.Fatalf("Failed to truncate table: %v", err)
-	}
-	db.GormDB.Find(&mx)
-	for _, m := range mx {
-		loadToBigQuery(m, "mx_records")
+	offset := 0
+	limit := 1000
+	for {
+		chunk := []types.Domain{}
+		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
+		if err != nil {
+			log.Fatalf("Failed to get chunk: %v", err)
+		}
+		if len(chunk) == 0 {
+			break
+		}
+		bqds := make([]types.DomainBQ, len(chunk))
+		for i, m := range chunk {
+			bqds[i] = m.ToBQ()
+		}
+		loadToBigQuery(bqds, tableName)
+		offset += limit
 	}
 
-	a := []types.ARecord{}
-	if err := truncateTable("a_records"); err != nil {
-		log.Fatalf("Failed to truncate table: %v", err)
+	offset = 0
+	limit = 1000
+	tableName = "cert_sans_domains"
+	if err := truncateTable(tableName); err != nil {
+		log.Printf("Failed to truncate table: %v", err)
 	}
-	db.GormDB.Find(&a)
-	for _, ip := range a {
-		loadToBigQuery(ip, "a_records")
+	for {
+		chunk := []types.CertSansDomain{}
+		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
+		if err != nil {
+			log.Fatalf("Failed to get chunk: %v", err)
+		}
+		if len(chunk) == 0 {
+			break
+		}
+		loadToBigQuery(chunk, tableName)
+		offset += limit
 	}
 
-	aaaa := []types.AAAARecord{}
-	if err := truncateTable("aaaa_records"); err != nil {
+	tableName = "mx_records"
+	offset = 0
+	limit = 1000
+	if err := truncateTable(tableName); err != nil {
+		log.Printf("Failed to truncate table: %v", err)
+	}
+	for {
+		chunk := []types.MXRecord{}
+		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
+		if err != nil {
+			log.Fatalf("Failed to get chunk: %v", err)
+		}
+		if len(chunk) == 0 {
+			break
+		}
+		loadToBigQuery(chunk, tableName)
+		offset += limit
+	}
+
+	tableName = "a_records"
+	offset = 0
+	limit = 1000
+	if err := truncateTable(tableName); err != nil {
+		log.Printf("Failed to truncate table: %v", err)
+	}
+	for {
+		chunk := []types.ARecord{}
+		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
+		if err != nil {
+			log.Fatalf("Failed to get chunk: %v", err)
+		}
+		if len(chunk) == 0 {
+			break
+		}
+		loadToBigQuery(chunk, tableName)
+		offset += limit
+
+	}
+
+	tableName = "aaaa_records"
+	offset = 0
+	limit = 1000
+	if err := truncateTable(tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
-	db.GormDB.Find(&aaaa)
-	loadToBigQuery(aaaa, "aaaa_records")
+	for {
+		chunk := []types.AAAARecord{}
+		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
+		if err != nil {
+			log.Fatalf("Failed to get chunk: %v", err)
+		}
+		if len(chunk) == 0 {
+			break
+		}
+		loadToBigQuery(chunk, tableName)
+		offset += limit
+	}
 
-	soa := []types.SOARecord{}
-	if err := truncateTable("soa_records"); err != nil {
+	tableName = "soa_records"
+	offset = 0
+	limit = 1000
+	if err := truncateTable(tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
-	db.GormDB.Find(&soa)
-	loadToBigQuery(soa, "soa_records")
+	for {
+		chunk := []types.SOARecord{}
+		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
+		if err != nil {
+			log.Fatalf("Failed to get chunk: %v", err)
+		}
+		if len(chunk) == 0 {
+			break
+		}
+		loadToBigQuery(chunk, tableName)
+		offset += limit
 
-	web := []types.WebRedirectDomain{}
-	if err := truncateTable("web_redirects"); err != nil {
+	}
+
+	tableName = "web_redirect_domains"
+	offset = 0
+	limit = 1000
+	if err := truncateTable(tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
-	db.GormDB.Find(&web)
-	loadToBigQuery(web, "web_redirects")
+	for {
+		chunk := []types.WebRedirectDomain{}
+		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
+		if err != nil {
+			log.Fatalf("Failed to get chunk: %v", err)
+		}
+		if len(chunk) == 0 {
+			break
+		}
+		loadToBigQuery(chunk, tableName)
+		offset += limit
 
-	sitemap := []types.Sitemap{}
-	if err := truncateTable("sitemaps"); err != nil {
+	}
+
+	tableName = "sitemaps"
+	offset = 0
+	limit = 1000
+	if err := truncateTable(tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
-	db.GormDB.Find(&sitemap)
-	loadToBigQuery(sitemap, "sitemaps")
+	for {
+		chunk := []types.Sitemap{}
+		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
+		if err != nil {
+			log.Fatalf("Failed to get chunk: %v", err)
+		}
+		if len(chunk) == 0 {
+			break
+		}
+		loadToBigQuery(chunk, tableName)
+		offset += limit
+	}
 
-	sitemapWeb := []types.SitemapWebDomain{}
-	if err := truncateTable("sitemap_web_domains"); err != nil {
+	tableName = "sitemap_web_domains"
+	offset = 0
+	limit = 1000
+	if err := truncateTable(tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
-	db.GormDB.Find(&sitemapWeb)
-	loadToBigQuery(sitemapWeb, "sitemap_web_domains")
+	for {
+		chunk := []types.SitemapWebDomain{}
+		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
+		if err != nil {
+			log.Fatalf("Failed to get chunk: %v", err)
+		}
+		if len(chunk) == 0 {
+			break
+		}
+		loadToBigQuery(chunk, tableName)
+		offset += limit
 
-	sitemapContact := []types.SitemapContactDomain{}
-	if err := truncateTable("sitemap_contact_domains"); err != nil {
+	}
+
+	tableName = "sitemap_contact_domains"
+	offset = 0
+	limit = 1000
+	if err := truncateTable(tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
-	db.GormDB.Find(&sitemapContact)
-	loadToBigQuery(sitemapContact, "sitemap_contact_domains")
-
+	for {
+		chunk := []types.SitemapContactDomain{}
+		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
+		if err != nil {
+			log.Fatalf("Failed to get chunk: %v", err)
+		}
+		if len(chunk) == 0 {
+			break
+		}
+		loadToBigQuery(chunk, tableName)
+		offset += limit
+	}
 }
-
 func loadToBigQuery(model interface{}, tableName string) {
 
 	ctx := context.Background()
@@ -127,10 +245,11 @@ func truncateTable(tableName string) error {
 	}
 	status, err := job.Wait(ctx)
 	if err != nil {
-		log.Fatalf("Failed to wait for delete job: %v", err)
+		log.Printf("Failed to wait for delete job: %v", err)
+		return err
 	}
 	if err := status.Err(); err != nil {
-		log.Fatalf("Delete job failed: %v", err)
+		log.Printf("Delete job failed: %v", err)
 	}
 	return nil
 }
