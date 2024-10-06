@@ -145,7 +145,7 @@ func main() {
 	offset = 0
 	limit = 1000
 	if err := recreateTable(types.WebRedirectDomain{}, tableName); err != nil {
-		log.Fatalf("Failed to truncate table: %v", err)
+		log.Printf("Failed to truncate table: %v", err)
 	}
 	for {
 		chunk := []types.WebRedirectDomain{}
@@ -223,6 +223,15 @@ func loadToBigQuery(model interface{}, tableName string) {
 
 	ctx := context.Background()
 	table := dataset.Table(tableName)
+	// Ensure table exists
+	for {
+		if _, err := table.Metadata(ctx); err != nil {
+			log.Printf("Table %s not found, sleeping for 3 seconds\n", tableName)
+			time.Sleep(3 * time.Second)
+		} else {
+			break
+		}
+	}
 	inserter := table.Inserter()
 	if err := inserter.Put(ctx, model); err != nil {
 		log.Printf("Failed to insert data into BigQuery table: %v\n", err)
@@ -237,7 +246,7 @@ func recreateTable(model interface{}, tableName string) error {
 	ctx := context.Background()
 	table := dataset.Table(tableName)
 	if err := table.Delete(ctx); err != nil {
-		return err
+		log.Printf("Failed to delete table: %v, trying to create\n", err)
 	}
 	time.Sleep(5 * time.Second)
 	sch, err := bigquery.InferSchema(model)
