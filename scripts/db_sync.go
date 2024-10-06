@@ -223,9 +223,11 @@ func loadToBigQuery(model interface{}, tableName string) {
 
 	ctx := context.Background()
 	table := dataset.Table(tableName)
+	dt := time.Time{}
 	// Ensure table exists
+	var m *bigquery.TableMetadata
 	for {
-		if _, err := table.Metadata(ctx); err != nil {
+		if m, _ = table.Metadata(ctx); m.FullID != table.FullyQualifiedName() || m.CreationTime == dt {
 			log.Printf("Table %s not found, sleeping for 3 seconds\n", tableName)
 			time.Sleep(3 * time.Second)
 		} else {
@@ -239,7 +241,6 @@ func loadToBigQuery(model interface{}, tableName string) {
 	}
 
 	fmt.Printf("Data loaded into BigQuery table: %s.%s.%s\n", "unum-marketing-data-assets", "domwalk", tableName)
-	time.Sleep(1 * time.Second)
 }
 
 func recreateTable(model interface{}, tableName string) error {
@@ -262,6 +263,5 @@ func recreateTable(model interface{}, tableName string) error {
 		return err
 	}
 	fmt.Printf("Table %s created\n", tableName)
-	time.Sleep(10 * time.Second)
 	return nil
 }
