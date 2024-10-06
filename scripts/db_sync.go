@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"domwalk/db"
@@ -21,7 +22,7 @@ func main() {
 	defer db.BQConn.Close()
 
 	tableName := "domains"
-	if err := truncateTable(tableName); err != nil {
+	if err := recreateTable(types.DomainBQ{}, tableName); err != nil {
 		log.Printf("Failed to truncate table: %v", err)
 	}
 	offset := 0
@@ -44,9 +45,9 @@ func main() {
 	}
 
 	offset = 0
-	limit = 1000
+	limit = 5000
 	tableName = "cert_sans_domains"
-	if err := truncateTable(tableName); err != nil {
+	if err := recreateTable(types.CertSansDomain{}, tableName); err != nil {
 		log.Printf("Failed to truncate table: %v", err)
 	}
 	for {
@@ -64,8 +65,8 @@ func main() {
 
 	tableName = "mx_records"
 	offset = 0
-	limit = 1000
-	if err := truncateTable(tableName); err != nil {
+	limit = 5000
+	if err := recreateTable(types.MXRecord{}, tableName); err != nil {
 		log.Printf("Failed to truncate table: %v", err)
 	}
 	for {
@@ -83,8 +84,8 @@ func main() {
 
 	tableName = "a_records"
 	offset = 0
-	limit = 1000
-	if err := truncateTable(tableName); err != nil {
+	limit = 5000
+	if err := recreateTable(types.ARecord{}, tableName); err != nil {
 		log.Printf("Failed to truncate table: %v", err)
 	}
 	for {
@@ -104,7 +105,7 @@ func main() {
 	tableName = "aaaa_records"
 	offset = 0
 	limit = 1000
-	if err := truncateTable(tableName); err != nil {
+	if err := recreateTable(types.AAAARecord{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
@@ -123,7 +124,7 @@ func main() {
 	tableName = "soa_records"
 	offset = 0
 	limit = 1000
-	if err := truncateTable(tableName); err != nil {
+	if err := recreateTable(types.SOARecord{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
@@ -143,7 +144,7 @@ func main() {
 	tableName = "web_redirect_domains"
 	offset = 0
 	limit = 1000
-	if err := truncateTable(tableName); err != nil {
+	if err := recreateTable(types.WebRedirectDomain{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
@@ -163,7 +164,7 @@ func main() {
 	tableName = "sitemaps"
 	offset = 0
 	limit = 1000
-	if err := truncateTable(tableName); err != nil {
+	if err := recreateTable(types.Sitemap{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
@@ -181,8 +182,8 @@ func main() {
 
 	tableName = "sitemap_web_domains"
 	offset = 0
-	limit = 1000
-	if err := truncateTable(tableName); err != nil {
+	limit = 5000
+	if err := recreateTable(types.SitemapWebDomain{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
@@ -201,8 +202,8 @@ func main() {
 
 	tableName = "sitemap_contact_domains"
 	offset = 0
-	limit = 1000
-	if err := truncateTable(tableName); err != nil {
+	limit = 5000
+	if err := recreateTable(types.SitemapContactDomain{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
@@ -229,27 +230,29 @@ func loadToBigQuery(model interface{}, tableName string) {
 	}
 
 	fmt.Printf("Data loaded into BigQuery table: %s.%s.%s\n", "unum-marketing-data-assets", "domwalk", tableName)
-
+	time.Sleep(1 * time.Second)
 }
 
-func truncateTable(tableName string) error {
+func recreateTable(model interface{}, tableName string) error {
 	ctx := context.Background()
-	q := db.BQConn.Query(
-		fmt.Sprintf(
-			"DELETE FROM `%s.%s.%s` WHERE true", "unum-marketing-data-assets", "domwalk", tableName,
-		),
-	)
-	job, err := q.Run(ctx)
-	if err != nil {
-		log.Fatalf("Failed to run delete query: %v", err)
-	}
-	status, err := job.Wait(ctx)
-	if err != nil {
-		log.Printf("Failed to wait for delete job: %v", err)
+	table := dataset.Table(tableName)
+	if err := table.Delete(ctx); err != nil {
 		return err
 	}
-	if err := status.Err(); err != nil {
-		log.Printf("Delete job failed: %v", err)
+	time.Sleep(5 * time.Second)
+	sch, err := bigquery.InferSchema(model)
+	if err != nil {
+		log.Printf("Failed to infer schema: %v", err)
+		return err
 	}
+	metaData := &bigquery.TableMetadata{
+		Schema: sch,
+	}
+	if err := table.Create(ctx, metaData); err != nil {
+		log.Printf("Failed to create table: %v", err)
+		return err
+	}
+	fmt.Printf("Table %s created\n", tableName)
+	time.Sleep(10 * time.Second)
 	return nil
 }
