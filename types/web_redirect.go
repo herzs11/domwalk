@@ -69,7 +69,7 @@ func (d *Domain) GetRedirectDomains() error {
 		if err != nil {
 			log.Println(err)
 		}
-		wr := WebRedirectDomain{MatchedDomain{DomainName: d.DomainName, Domain: *rdom}}
+		wr := WebRedirectDomain{MatchedDomain{DomainID: d.ID, Domain: *rdom}}
 		d.WebRedirectDomains = append(d.WebRedirectDomains, wr)
 	}
 	return nil

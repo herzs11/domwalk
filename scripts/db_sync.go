@@ -47,11 +47,12 @@ func main() {
 	offset = 0
 	limit = 5000
 	tableName = "cert_sans_domains"
-	if err := recreateTable(types.CertSansDomain{}, tableName); err != nil {
+	if err := recreateTable(types.MatchedDomainBQ{}, tableName); err != nil {
 		log.Printf("Failed to truncate table: %v", err)
 	}
 	for {
 		chunk := []types.CertSansDomain{}
+		bqr := []types.MatchedDomainBQ{}
 		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 		if err != nil {
 			log.Fatalf("Failed to get chunk: %v", err)
@@ -59,17 +60,21 @@ func main() {
 		if len(chunk) == 0 {
 			break
 		}
-		loadToBigQuery(chunk, tableName)
+		for _, m := range chunk {
+			bqr = append(bqr, m.ToBQ())
+		}
+		loadToBigQuery(bqr, tableName)
 		offset += limit
 	}
 
 	tableName = "mx_records"
 	offset = 0
 	limit = 5000
-	if err := recreateTable(types.MXRecord{}, tableName); err != nil {
+	if err := recreateTable(types.MXRecordBQ{}, tableName); err != nil {
 		log.Printf("Failed to truncate table: %v", err)
 	}
 	for {
+		bqr := []types.MXRecordBQ{}
 		chunk := []types.MXRecord{}
 		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 		if err != nil {
@@ -78,17 +83,21 @@ func main() {
 		if len(chunk) == 0 {
 			break
 		}
-		loadToBigQuery(chunk, tableName)
+		for _, m := range chunk {
+			bqr = append(bqr, m.ToBQ())
+		}
+		loadToBigQuery(bqr, tableName)
 		offset += limit
 	}
 
 	tableName = "a_records"
 	offset = 0
 	limit = 5000
-	if err := recreateTable(types.ARecord{}, tableName); err != nil {
+	if err := recreateTable(types.ARecordBQ{}, tableName); err != nil {
 		log.Printf("Failed to truncate table: %v", err)
 	}
 	for {
+		bqr := []types.ARecordBQ{}
 		chunk := []types.ARecord{}
 		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 		if err != nil {
@@ -97,7 +106,10 @@ func main() {
 		if len(chunk) == 0 {
 			break
 		}
-		loadToBigQuery(chunk, tableName)
+		for _, m := range chunk {
+			bqr = append(bqr, m.ToBQ())
+		}
+		loadToBigQuery(bqr, tableName)
 		offset += limit
 
 	}
@@ -105,10 +117,11 @@ func main() {
 	tableName = "aaaa_records"
 	offset = 0
 	limit = 1000
-	if err := recreateTable(types.AAAARecord{}, tableName); err != nil {
+	if err := recreateTable(types.AAAARecordBQ{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
+		bqr := []types.AAAARecordBQ{}
 		chunk := []types.AAAARecord{}
 		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 		if err != nil {
@@ -117,17 +130,21 @@ func main() {
 		if len(chunk) == 0 {
 			break
 		}
-		loadToBigQuery(chunk, tableName)
+		for _, m := range chunk {
+			bqr = append(bqr, m.ToBQ())
+		}
+		loadToBigQuery(bqr, tableName)
 		offset += limit
 	}
 
 	tableName = "soa_records"
 	offset = 0
 	limit = 1000
-	if err := recreateTable(types.SOARecord{}, tableName); err != nil {
+	if err := recreateTable(types.SOARecordBQ{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
+		bqr := []types.SOARecordBQ{}
 		chunk := []types.SOARecord{}
 		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 		if err != nil {
@@ -136,7 +153,10 @@ func main() {
 		if len(chunk) == 0 {
 			break
 		}
-		loadToBigQuery(chunk, tableName)
+		for _, m := range chunk {
+			bqr = append(bqr, m.ToBQ())
+		}
+		loadToBigQuery(bqr, tableName)
 		offset += limit
 
 	}
@@ -144,11 +164,12 @@ func main() {
 	tableName = "web_redirect_domains"
 	offset = 0
 	limit = 1000
-	if err := recreateTable(types.WebRedirectDomain{}, tableName); err != nil {
+	if err := recreateTable(types.MatchedDomainBQ{}, tableName); err != nil {
 		log.Printf("Failed to truncate table: %v", err)
 	}
 	for {
 		chunk := []types.WebRedirectDomain{}
+		bqr := []types.MatchedDomainBQ{}
 		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 		if err != nil {
 			log.Fatalf("Failed to get chunk: %v", err)
@@ -156,7 +177,10 @@ func main() {
 		if len(chunk) == 0 {
 			break
 		}
-		loadToBigQuery(chunk, tableName)
+		for _, m := range chunk {
+			bqr = append(bqr, m.ToBQ())
+		}
+		loadToBigQuery(bqr, tableName)
 		offset += limit
 
 	}
@@ -164,11 +188,12 @@ func main() {
 	tableName = "sitemaps"
 	offset = 0
 	limit = 1000
-	if err := recreateTable(types.Sitemap{}, tableName); err != nil {
+	if err := recreateTable(types.SitemapBQ{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
 		chunk := []types.Sitemap{}
+		bqr := []types.SitemapBQ{}
 		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 		if err != nil {
 			log.Fatalf("Failed to get chunk: %v", err)
@@ -176,18 +201,22 @@ func main() {
 		if len(chunk) == 0 {
 			break
 		}
-		loadToBigQuery(chunk, tableName)
+		for _, m := range chunk {
+			bqr = append(bqr, m.ToBQ())
+		}
+		loadToBigQuery(bqr, tableName)
 		offset += limit
 	}
 
 	tableName = "sitemap_web_domains"
 	offset = 0
 	limit = 5000
-	if err := recreateTable(types.SitemapWebDomain{}, tableName); err != nil {
+	if err := recreateTable(types.MatchedDomainBQ{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
 		chunk := []types.SitemapWebDomain{}
+		bqr := []types.MatchedDomainBQ{}
 		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 		if err != nil {
 			log.Fatalf("Failed to get chunk: %v", err)
@@ -195,7 +224,10 @@ func main() {
 		if len(chunk) == 0 {
 			break
 		}
-		loadToBigQuery(chunk, tableName)
+		for _, m := range chunk {
+			bqr = append(bqr, m.ToBQ())
+		}
+		loadToBigQuery(bqr, tableName)
 		offset += limit
 
 	}
@@ -203,11 +235,12 @@ func main() {
 	tableName = "sitemap_contact_domains"
 	offset = 0
 	limit = 5000
-	if err := recreateTable(types.SitemapContactDomain{}, tableName); err != nil {
+	if err := recreateTable(types.MatchedDomainBQ{}, tableName); err != nil {
 		log.Fatalf("Failed to truncate table: %v", err)
 	}
 	for {
 		chunk := []types.SitemapContactDomain{}
+		bqr := []types.MatchedDomainBQ{}
 		err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 		if err != nil {
 			log.Fatalf("Failed to get chunk: %v", err)
@@ -215,29 +248,28 @@ func main() {
 		if len(chunk) == 0 {
 			break
 		}
-		loadToBigQuery(chunk, tableName)
+		for _, m := range chunk {
+			bqr = append(bqr, m.ToBQ())
+		}
+		loadToBigQuery(bqr, tableName)
 		offset += limit
 	}
 }
+
 func loadToBigQuery(model interface{}, tableName string) {
 
 	ctx := context.Background()
 	table := dataset.Table(tableName)
-	dt := time.Time{}
-	// Ensure table exists
-	var m *bigquery.TableMetadata
+
+	inserter := table.Inserter()
 	for {
-		if m, _ = table.Metadata(ctx); m.FullID != table.FullyQualifiedName() || m.CreationTime == dt {
-			log.Printf("Table %s not found, sleeping for 3 seconds\n", tableName)
+		if err := inserter.Put(ctx, model); err != nil {
+			log.Printf("Failed to insert data into BigQuery table: %v, sleeping for 3 seconds\n", err)
 			time.Sleep(3 * time.Second)
+
 		} else {
 			break
 		}
-	}
-	inserter := table.Inserter()
-	if err := inserter.Put(ctx, model); err != nil {
-		log.Printf("Failed to insert data into BigQuery table: %v\n", err)
-		return
 	}
 
 	fmt.Printf("Data loaded into BigQuery table: %s.%s.%s\n", "unum-marketing-data-assets", "domwalk", tableName)

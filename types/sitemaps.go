@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/temoto/robotstxt"
+	"gorm.io/gorm"
 )
 
 type URL struct {
@@ -28,10 +29,27 @@ type SitemapIndex struct {
 }
 
 type Sitemap struct {
-	CreatedAt  time.Time `bigquery:"created_at"`
-	UpdatedAt  time.Time `bigquery:"updated_at"`
-	DomainName string    `json:"domainName,omitempty" bigquery:"domain_name"`
-	Sitemap    string    `json:"sitemap,omitempty" bigquery:"sitemap"`
+	gorm.Model
+	DomainID uint   `json:"domainName,omitempty" bigquery:"domain_name"`
+	Sitemap  string `json:"sitemap,omitempty" bigquery:"sitemap"`
+}
+
+type SitemapBQ struct {
+	ID        int       `bigquery:"id"`
+	CreatedAt time.Time `bigquery:"created_at"`
+	UpdatedAt time.Time `bigquery:"updated_at"`
+	DomainID  int       `bigquery:"domain_id"`
+	Sitemap   string    `bigquery:"sitemap"`
+}
+
+func (s *Sitemap) ToBQ() SitemapBQ {
+	return SitemapBQ{
+		ID:        int(s.ID),
+		CreatedAt: s.CreatedAt,
+		UpdatedAt: s.UpdatedAt,
+		DomainID:  int(s.DomainID),
+		Sitemap:   s.Sitemap,
+	}
 }
 
 type SitemapContactDomain struct {
@@ -84,7 +102,7 @@ func (d *Domain) getRobotstxt() error {
 		robots.Sitemaps = robots.Sitemaps[:11]
 	}
 	for _, sitemap := range robots.Sitemaps {
-		d.Sitemaps = append(d.Sitemaps, &Sitemap{DomainName: d.DomainName, Sitemap: sitemap})
+		d.Sitemaps = append(d.Sitemaps, &Sitemap{DomainID: d.ID, Sitemap: sitemap})
 	}
 
 	return nil
@@ -115,7 +133,6 @@ func (s *Sitemap) readSitemap() (URLSet, []*Sitemap, error) {
 	}
 	resp, err := client.Get(s.Sitemap)
 	if err != nil {
-		fmt.Printf("Error performing GET request: %s\n", err)
 		return URLSet{}, nil, err
 	}
 	defer resp.Body.Close()
@@ -144,8 +161,11 @@ func (s *Sitemap) readSitemap() (URLSet, []*Sitemap, error) {
 			if !strings.Contains(sitemap.Loc, ".xml") || sitemap.Loc == s.Sitemap {
 				continue
 			}
-			s := &Sitemap{DomainName: s.DomainName, Sitemap: sitemap.Loc}
+			s := &Sitemap{DomainID: s.DomainID, Sitemap: sitemap.Loc}
 			sms = append(sms, s)
+			if len(sms) > 200 {
+				break
+			}
 			urls, sitemaps, err := s.readSitemap()
 			sms = append(sms, sitemaps...)
 			if err != nil {
@@ -204,7 +224,7 @@ func (d *Domain) getURLsFromSitemaps() {
 func (d *Domain) GetWebDomainsFromSitemap() {
 	var domsFound = make(map[string]bool)
 	for _, u := range d.sitemapURLs {
-		up, err := url.Parse(u)
+		up, err := url.Parse(strings.TrimSpace(u))
 		if err != nil {
 			log.Println(err)
 			continue
@@ -218,7 +238,7 @@ func (d *Domain) GetWebDomainsFromSitemap() {
 		}
 		if _, exists := domsFound[dom.DomainName]; !exists {
 			domsFound[dom.DomainName] = true
-			sd := SitemapWebDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dom}}
+			sd := SitemapWebDomain{MatchedDomain{DomainID: d.ID, Domain: *dom}}
 			d.SitemapWebDomains = append(d.SitemapWebDomains, sd)
 		}
 	}
@@ -254,7 +274,7 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 
 	var domsFound = make(map[string]bool)
 	for _, url := range d.contactPages {
-		resp, err := client.Get(url)
+		resp, err := client.Get(strings.TrimSpace(url))
 		if err != nil {
 			log.Printf("Error performing GET request: %s\n", err)
 			continue
@@ -285,7 +305,7 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 			}
 			if _, exists := domsFound[dom.DomainName]; !exists {
 				domsFound[dom.DomainName] = true
-				sd := SitemapContactDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dom}}
+				sd := SitemapContactDomain{MatchedDomain{DomainID: d.ID, Domain: *dom}}
 				d.SitemapContactDomains = append(d.SitemapContactDomains, sd)
 			}
 		}

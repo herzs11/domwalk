@@ -7,56 +7,109 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/miekg/dns"
+	"gorm.io/gorm"
 )
 
 type AAAARecord struct {
-	CreatedAt  time.Time `bigquery:"created_at"`
-	UpdatedAt  time.Time `bigquery:"updated_at"`
-	IPV6       string    `gorm:"primaryKey" bigquery:"ip_v6"`
-	DomainName string    `gorm:"primaryKey" bigquery:"domain_name"`
+	gorm.Model
+	IPV6     string `gorm:"uniqueIndex:aaaa_dom_idx" bigquery:"ip_v6"`
+	DomainID uint   `gorm:"uniqueIndex:aaaa_dom_idx" bigquery:"domain_id"`
+}
+
+type AAAARecordBQ struct {
+	ID        int       `bigquery:"id"`
+	CreatedAt time.Time `bigquery:"created_at"`
+	UpdatedAt time.Time `bigquery:"updated_at"`
+	IPV6      string    `bigquery:"ip_v6"`
+	DomainID  int       `bigquery:"domain_id"`
+}
+
+func (a *AAAARecord) ToBQ() AAAARecordBQ {
+	return AAAARecordBQ{
+		ID:        int(a.ID),
+		CreatedAt: a.CreatedAt,
+		UpdatedAt: a.UpdatedAt,
+		IPV6:      a.IPV6,
+		DomainID:  int(a.DomainID),
+	}
 }
 
 type ARecord struct {
-	CreatedAt  time.Time `bigquery:"created_at"`
-	UpdatedAt  time.Time `bigquery:"updated_at"`
-	IP         string    `gorm:"primaryKey" bigquery:"ip"`
-	DomainName string    `gorm:"primaryKey" bigquery:"domain_name"`
+	gorm.Model
+	IP       string `gorm:"uniqueIndex:dom_a_idx" bigquery:"ip"`
+	DomainID uint   `gorm:"uniqueIndex:dom_a_idx" bigquery:"domain_id"`
+}
+
+type ARecordBQ struct {
+	ID        int       `bigquery:"id"`
+	CreatedAt time.Time `bigquery:"created_at"`
+	UpdatedAt time.Time `bigquery:"updated_at"`
+	IP        string    `bigquery:"ip"`
+	DomainID  int       `bigquery:"domain_id"`
+}
+
+func (a *ARecord) ToBQ() ARecordBQ {
+	return ARecordBQ{
+		ID:        int(a.ID),
+		CreatedAt: a.CreatedAt,
+		UpdatedAt: a.UpdatedAt,
+		IP:        a.IP,
+		DomainID:  int(a.DomainID),
+	}
 }
 
 type SOARecord struct {
-	CreatedAt  time.Time `bigquery:"created_at"`
-	UpdatedAt  time.Time `bigquery:"updated_at"`
-	NS         string    `gorm:"primaryKey" bigquery:"ns"`
-	MBox       string    `gorm:"primaryKey" bigquery:"mbox"`
-	Serial     uint32    `gorm:"primaryKey" bigquery:"serial"`
-	DomainName string    `gorm:"primaryKey" bigquery:"domain_name"`
+	gorm.Model
+	NS       string `gorm:"uniqueIndex:soa_dom_idx" bigquery:"ns"`
+	MBox     string `gorm:"uniqueIndex:soa_dom_idx" bigquery:"mbox"`
+	Serial   uint32 `gorm:"uniqueIndex:soa_dom_idx" bigquery:"serial"`
+	DomainID uint   `gorm:"uniqueIndex:soa_dom_idx" bigquery:"domain_id"`
 }
 
 type SOARecordBQ struct {
-	CreatedAt  time.Time           `bigquery:"created_at"`
-	UpdatedAt  time.Time           `bigquery:"updated_at"`
-	NS         bigquery.NullString `gorm:"primaryKey" bigquery:"ns"`
-	MBox       bigquery.NullString `gorm:"primaryKey" bigquery:"mbox"`
-	Serial     bigquery.NullInt64  `gorm:"primaryKey" bigquery:"serial"`
-	DomainName string              `gorm:"primaryKey" bigquery:"domain_name"`
+	ID        int                 `bigquery:"id"`
+	CreatedAt time.Time           `bigquery:"created_at"`
+	UpdatedAt time.Time           `bigquery:"updated_at"`
+	NS        bigquery.NullString `gorm:"primaryKey" bigquery:"ns"`
+	MBox      bigquery.NullString `gorm:"primaryKey" bigquery:"mbox"`
+	Serial    bigquery.NullInt64  `gorm:"primaryKey" bigquery:"serial"`
+	DomainID  int                 `gorm:"primaryKey" bigquery:"domain_id"`
 }
 
 func (s *SOARecord) ToBQ() SOARecordBQ {
 	return SOARecordBQ{
-		CreatedAt:  s.CreatedAt,
-		UpdatedAt:  s.UpdatedAt,
-		NS:         bigquery.NullString{Valid: s.NS != "", StringVal: s.NS},
-		MBox:       bigquery.NullString{Valid: s.MBox != "", StringVal: s.MBox},
-		Serial:     bigquery.NullInt64{Valid: s.Serial != 0, Int64: int64(s.Serial)},
-		DomainName: s.DomainName,
+		ID:        int(s.ID),
+		CreatedAt: s.CreatedAt,
+		UpdatedAt: s.UpdatedAt,
+		NS:        bigquery.NullString{Valid: s.NS != "", StringVal: s.NS},
+		MBox:      bigquery.NullString{Valid: s.MBox != "", StringVal: s.MBox},
+		Serial:    bigquery.NullInt64{Valid: s.Serial != 0, Int64: int64(s.Serial)},
+		DomainID:  int(s.DomainID),
 	}
 }
 
 type MXRecord struct {
-	CreatedAt  time.Time `bigquery:"created_at"`
-	UpdatedAt  time.Time `bigquery:"updated_at"`
-	Mx         string    `gorm:"primaryKey" bigquery:"mx"`
-	DomainName string    `gorm:"primaryKey" bigquery:"domain_name"`
+	gorm.Model
+	Mx       string `gorm:"uniqueIndex:mx_dom_idx" bigquery:"mx"`
+	DomainID uint   `gorm:"uniqueIndex:mx_dom_idx" bigquery:"domain_id"`
+}
+
+type MXRecordBQ struct {
+	ID        int       `bigquery:"id"`
+	CreatedAt time.Time `bigquery:"created_at"`
+	UpdatedAt time.Time `bigquery:"updated_at"`
+	Mx        string    `bigquery:"mx"`
+	DomainID  int       `bigquery:"domain_id"`
+}
+
+func (m *MXRecord) ToBQ() MXRecordBQ {
+	return MXRecordBQ{
+		ID:        int(m.ID),
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
+		Mx:        m.Mx,
+		DomainID:  int(m.DomainID),
+	}
 }
 
 var (
@@ -64,68 +117,72 @@ var (
 	ClientConfig *dns.ClientConfig
 )
 
-func QueryMX(domain string) ([]MXRecord, error) {
+func (d *Domain) QueryMX() error {
 	msg := new(dns.Msg)
-	msg.SetQuestion(dns.Fqdn(domain), dns.TypeMX)
+	msg.SetQuestion(dns.Fqdn(d.DomainName), dns.TypeMX)
 	r, err := queryAllServers(msg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	mxs := []MXRecord{}
 	for _, ans := range r.Answer {
 		if a, ok := ans.(*dns.MX); ok {
-			mxs = append(mxs, MXRecord{DomainName: domain, Mx: a.Mx})
+			mxs = append(mxs, MXRecord{DomainID: d.ID, Mx: a.Mx})
 		}
 	}
-	return mxs, nil
+	d.MXRecords = mxs
+	return nil
 }
 
-func QueryA(domain string) ([]ARecord, error) {
+func (d *Domain) QueryA() error {
 	msg := new(dns.Msg)
-	msg.SetQuestion(dns.Fqdn(domain), dns.TypeA)
+	msg.SetQuestion(dns.Fqdn(d.DomainName), dns.TypeA)
 	r, err := queryAllServers(msg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	ips := []ARecord{}
 	for _, ans := range r.Answer {
 		if a, ok := ans.(*dns.A); ok {
-			ips = append(ips, ARecord{IP: a.A.String(), DomainName: domain})
+			ips = append(ips, ARecord{IP: a.A.String(), DomainID: d.ID})
 		}
 	}
-	return ips, nil
+	d.ARecords = ips
+	return nil
 }
 
-func QueryAAAA(domain string) ([]AAAARecord, error) {
+func (d *Domain) QueryAAAA() error {
 	msg := new(dns.Msg)
-	msg.SetQuestion(dns.Fqdn(domain), dns.TypeAAAA)
+	msg.SetQuestion(dns.Fqdn(d.DomainName), dns.TypeAAAA)
 	r, err := queryAllServers(msg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	ips := []AAAARecord{}
 	for _, ans := range r.Answer {
 		if a, ok := ans.(*dns.AAAA); ok {
-			ips = append(ips, AAAARecord{IPV6: a.AAAA.String(), DomainName: domain})
+			ips = append(ips, AAAARecord{IPV6: a.AAAA.String(), DomainID: d.ID})
 		}
 	}
-	return ips, nil
+	d.AAAARecords = ips
+	return nil
 }
 
-func QuerySOA(domain string) ([]SOARecord, error) {
+func (d *Domain) QuerySOA() error {
 	msg := new(dns.Msg)
-	msg.SetQuestion(dns.Fqdn(domain), dns.TypeSOA)
+	msg.SetQuestion(dns.Fqdn(d.DomainName), dns.TypeSOA)
 	r, err := queryAllServers(msg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	soas := []SOARecord{}
 	for _, ans := range r.Answer {
 		if a, ok := ans.(*dns.SOA); ok {
-			soas = append(soas, SOARecord{NS: a.Ns, MBox: a.Mbox, Serial: a.Serial, DomainName: domain})
+			soas = append(soas, SOARecord{NS: a.Ns, MBox: a.Mbox, Serial: a.Serial, DomainID: d.ID})
 		}
 	}
-	return soas, nil
+	d.SOARecords = soas
+	return nil
 }
 
 func query(msg *dns.Msg, nameserver string) (*dns.Msg, error) {
@@ -157,21 +214,20 @@ func (d *Domain) GetDNSRecords() []error {
 	if d.NonPublicDomain {
 		return []error{errors.New("Non public domain")}
 	}
-	var err error
 	errs := []error{}
-	d.ARecords, err = QueryA(d.DomainName)
+	err := d.QueryA()
 	if err != nil {
 		errs = append(errs, err)
 	}
-	d.AAAARecords, err = QueryAAAA(d.DomainName)
+	err = d.QueryAAAA()
 	if err != nil {
 		errs = append(errs, err)
 	}
-	d.MXRecords, err = QueryMX(d.DomainName)
+	err = d.QueryMX()
 	if err != nil {
 		errs = append(errs, err)
 	}
-	d.SOARecords, err = QuerySOA(d.DomainName)
+	err = d.QuerySOA()
 	if err != nil {
 		errs = append(errs, err)
 	}

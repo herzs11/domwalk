@@ -14,9 +14,8 @@ import (
 )
 
 type Domain struct {
-	DomainName            string                 `json:"domainName,omitempty" gorm:"primaryKey" bigquery:"domain_name"`
-	CreatedAt             time.Time              `bigquery:"created_at"`
-	UpdatedAt             time.Time              `bigquery:"updated_at"`
+	gorm.Model
+	DomainName            string                 `json:"domainName,omitempty" gorm:"uniqueIndex" bigquery:"domain_name"`
 	NonPublicDomain       bool                   `json:"nonPublicDomain,omitempty" bigquery:"non_public_domain"`
 	Hostname              string                 `json:"hostname,omitempty" bigquery:"hostname,nullable"`
 	Subdomain             string                 `json:"subdomain,omitempty" bigquery:"subdomain,nullable"`
@@ -27,15 +26,15 @@ type Domain struct {
 	LastRanDns            time.Time              `json:"lastRanDNS,omitempty" bigquery:"last_ran_dns"`
 	LastRanCertSans       time.Time              `json:"lastRanCertSANs,omitempty" bigquery:"last_ran_cert_sans"`
 	LastRanSitemapParse   time.Time              `json:"lastRanSitemapParse,omitempty" bigquery:"last_ran_sitemap_parse"`
-	ARecords              []ARecord              `gorm:"foreignKey:DomainName;references:DomainName"  bigquery:"-"`
-	AAAARecords           []AAAARecord           `gorm:"foreignKey:DomainName;references:DomainName" bigquery:"-"`
-	MXRecords             []MXRecord             `gorm:"foreignKey:DomainName;references:DomainName" bigquery:"-"`
-	SOARecords            []SOARecord            `gorm:"foreignKey:DomainName;references:DomainName" bigquery:"-"`
-	Sitemaps              []*Sitemap             `json:"sitemaps,omitempty" gorm:"foreignKey:DomainName;references:DomainName" bigquery:"-"`
-	WebRedirectDomains    []WebRedirectDomain    `json:"landedWebHost,omitempty" gorm:"foreignKey:DomainName" bigquery:"-"`
-	CertSANs              []CertSansDomain       `json:"certSANs,omitempty" gorm:"foreignKey:DomainName" bigquery:"-"`
-	SitemapWebDomains     []SitemapWebDomain     `json:"sitemapWebDomains,omitempty" gorm:"foreignKey:DomainName" bigquery:"-"`
-	SitemapContactDomains []SitemapContactDomain `json:"sitemapContactDomains,omitempty" gorm:"foreignKey:DomainName" bigquery:"-"`
+	ARecords              []ARecord              `bigquery:"-"`
+	AAAARecords           []AAAARecord           `bigquery:"-"`
+	MXRecords             []MXRecord             `bigquery:"-"`
+	SOARecords            []SOARecord            `bigquery:"-"`
+	Sitemaps              []*Sitemap             `json:"sitemaps,omitempty" bigquery:"-"`
+	WebRedirectDomains    []WebRedirectDomain    `json:"landedWebHost,omitempty" bigquery:"-"`
+	CertSANs              []CertSansDomain       `json:"certSANs,omitempty" bigquery:"-"`
+	SitemapWebDomains     []SitemapWebDomain     `json:"sitemapWebDomains,omitempty" bigquery:"-"`
+	SitemapContactDomains []SitemapContactDomain `json:"sitemapContactDomains,omitempty" bigquery:"-"`
 
 	sitemapURLs  []string `gorm:"-"`
 	contactPages []string `gorm:"-"`
@@ -62,9 +61,10 @@ func (d *Domain) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type DomainBQ struct {
-	DomainName           string              `bigquery:"domain_name"`
+	ID                   int                 `bigquery:"id"`
 	CreatedAt            time.Time           `bigquery:"created_at"`
 	UpdatedAt            time.Time           `bigquery:"updated_at"`
+	DomainName           string              `bigquery:"domain_name"`
 	NonPublicDomain      bool                `bigquery:"non_public_domain"`
 	Hostname             bigquery.NullString `bigquery:"hostname"`
 	Subdomain            bigquery.NullString `bigquery:"subdomain"`
@@ -79,9 +79,10 @@ type DomainBQ struct {
 
 func (d *Domain) ToBQ() DomainBQ {
 	return DomainBQ{
-		DomainName:           d.DomainName,
+		ID:                   int(d.ID),
 		CreatedAt:            d.CreatedAt,
 		UpdatedAt:            d.UpdatedAt,
+		DomainName:           d.DomainName,
 		NonPublicDomain:      d.NonPublicDomain,
 		Hostname:             bigquery.NullString{d.Hostname, d.Hostname != ""},
 		Subdomain:            bigquery.NullString{d.Subdomain, d.Subdomain != ""},
@@ -106,10 +107,10 @@ func (d *Domain) parseDomain() error {
 		d.NonPublicDomain = true
 		return errors.New("Unable to parse domain from public suffix list")
 	}
-	d.DomainName = fmt.Sprintf("%s.%s", dom.SLD, dom.TLD)
-	d.Hostname = dom.SLD
-	d.Subdomain = dom.TRD
-	d.Suffix = dom.TLD
+	d.DomainName = fmt.Sprintf("%s.%s", strings.ToLower(dom.SLD), strings.ToLower(dom.TLD))
+	d.Hostname = strings.ToLower(dom.SLD)
+	d.Subdomain = strings.ToLower(dom.TRD)
+	d.Suffix = strings.ToLower(dom.TLD)
 	d.NonPublicDomain = false
 	return nil
 }

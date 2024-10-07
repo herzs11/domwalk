@@ -81,7 +81,7 @@ func (d *Domain) GetCertSANs() error {
 		}
 		if _, exists := domsFound[dm.DomainName]; !exists {
 			domsFound[dm.DomainName] = true
-			certSAN := CertSansDomain{MatchedDomain{DomainName: dom, Domain: *dm}}
+			certSAN := CertSansDomain{MatchedDomain{DomainID: d.ID, Domain: *dm}}
 			d.CertSANs = append(d.CertSANs, certSAN)
 		}
 	}

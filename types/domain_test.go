@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"log"
 	"testing"
 	"time"
@@ -12,6 +13,7 @@ import (
 func TestMain(m *testing.M) {
 	ClearTables()
 	CreateTables()
+	fmt.Println("HERE")
 	m.Run()
 	gdb, err := db.GormDB.DB()
 	if err != nil {
@@ -22,13 +24,13 @@ func TestMain(m *testing.M) {
 
 func TestDomains(t *testing.T) {
 	doms := []string{
-		// "hanselhonda.com",
+		"hanselhonda.com",
 		"levi.com",
-		// "cetac.com",
+		"cetac.com",
 	}
 
 	for _, dom := range doms {
-		d, err := NewDomain("levistrauss.com")
+		d, err := NewDomain(dom)
 		// skip domains that are already in the table
 		if err != nil {
 			t.Errorf("Error parsing domain %s: %s\n", dom, err)
@@ -37,24 +39,16 @@ func TestDomains(t *testing.T) {
 		d.GetRedirectDomains()
 		d.GetCertSANs()
 		d.GetDomainsFromSitemap()
-		d.CertSANs = append(
-			d.CertSANs, CertSansDomain{
-				MatchedDomain{
-					DomainName:        d.DomainName,
-					MatchedDomainName: "teledynecetac.com",
-				},
-			},
-		)
 		db.Mut.Lock()
 
 		db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(d)
 		time.Sleep(1 * time.Second)
-		d2, err := NewDomain(dom)
-		if err != nil {
-			t.Errorf("Error parsing domain %s: %s\n", d2.DomainName, err)
-		}
-		d2.GetCertSANs()
-		db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(d2)
+		// d2, err := NewDomain("levistrauss.com")
+		// if err != nil {
+		// 	t.Errorf("Error parsing domain %s: %s\n", d2.DomainName, err)
+		// }
+		// d2.GetCertSANs()
+		// db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(d2)
 		db.Mut.Unlock()
 	}
 
