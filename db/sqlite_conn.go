@@ -1,9 +1,11 @@
 package db
 
 import (
+	"fmt"
 	"os"
 	"sync"
 
+	"github.com/fatih/color"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -12,8 +14,11 @@ import (
 var GormDB *gorm.DB
 var Mut *sync.Mutex
 
-func init() {
-	db_name := os.Getenv("GORM_SQLITE_NAME")
+func GormDBConnect(db_name string) error {
+	if _, err := os.Stat(db_name); os.IsNotExist(err) {
+		color.Yellow("Database file does not exist. Creating...\n")
+	}
+	Mut = &sync.Mutex{}
 	var err error
 	GormDB, err = gorm.Open(
 		sqlite.Open(db_name), &gorm.Config{
@@ -21,7 +26,7 @@ func init() {
 		},
 	)
 	if err != nil {
-		panic("failed to connect database")
+		return fmt.Errorf("failed to connect database: %s", err)
 	}
-	Mut = &sync.Mutex{}
+	return nil
 }

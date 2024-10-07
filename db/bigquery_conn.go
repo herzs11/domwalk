@@ -11,7 +11,6 @@ var BQConn *bigquery.Client
 
 func CreateBigQueryConn() error {
 	ctx := context.Background()
-
 	// Set your Google Cloud Project ID
 	projectID := "unum-marketing-data-assets"
 
