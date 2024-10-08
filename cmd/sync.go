@@ -24,6 +24,7 @@ type syncConfig struct {
 
 func pullFromBQ(cfg syncConfig) {
 	fmt.Println("Pulling data from BigQuery")
+	// TODO: Implement pulling data from BigQuery
 }
 
 func pushToBQ(cfg syncConfig) {

@@ -11,6 +11,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	db.GormDBConnect("test.db")
 	ClearTables()
 	CreateTables()
 	fmt.Println("HERE")
@@ -24,9 +25,7 @@ func TestMain(m *testing.M) {
 
 func TestDomains(t *testing.T) {
 	doms := []string{
-		"hanselhonda.com",
-		"levi.com",
-		"cetac.com",
+		"leicabiosystems.com",
 	}
 
 	for _, dom := range doms {

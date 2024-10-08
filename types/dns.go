@@ -8,6 +8,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	"github.com/miekg/dns"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type AAAARecord struct {
@@ -24,6 +25,20 @@ type AAAARecordBQ struct {
 	DomainID  int       `bigquery:"domain_id"`
 }
 
+func (d *AAAARecord) BeforeCreate(tx *gorm.DB) (err error) {
+	tx.Statement.AddClause(
+		clause.OnConflict{
+			Columns: []clause.Column{{Name: "ip_v6"}, {Name: "domain_id"}},
+			DoUpdates: clause.Assignments(
+				map[string]interface{}{
+					"updated_at": gorm.Expr("MAX(updated_at, excluded.updated_at)"),
+				},
+			),
+		},
+	)
+	return nil
+}
+
 func (a *AAAARecord) ToBQ() AAAARecordBQ {
 	return AAAARecordBQ{
 		ID:        int(a.ID),
@@ -38,6 +53,20 @@ type ARecord struct {
 	gorm.Model
 	IP       string `gorm:"uniqueIndex:dom_a_idx" bigquery:"ip"`
 	DomainID uint   `gorm:"uniqueIndex:dom_a_idx" bigquery:"domain_id"`
+}
+
+func (d *ARecord) BeforeCreate(tx *gorm.DB) (err error) {
+	tx.Statement.AddClause(
+		clause.OnConflict{
+			Columns: []clause.Column{{Name: "ip"}, {Name: "domain_id"}},
+			DoUpdates: clause.Assignments(
+				map[string]interface{}{
+					"updated_at": gorm.Expr("MAX(updated_at, excluded.updated_at)"),
+				},
+			),
+		},
+	)
+	return nil
 }
 
 type ARecordBQ struct {
@@ -64,6 +93,20 @@ type SOARecord struct {
 	MBox     string `gorm:"uniqueIndex:soa_dom_idx" bigquery:"mbox"`
 	Serial   uint32 `gorm:"uniqueIndex:soa_dom_idx" bigquery:"serial"`
 	DomainID uint   `gorm:"uniqueIndex:soa_dom_idx" bigquery:"domain_id"`
+}
+
+func (d *SOARecord) BeforeCreate(tx *gorm.DB) (err error) {
+	tx.Statement.AddClause(
+		clause.OnConflict{
+			Columns: []clause.Column{{Name: "ns"}, {Name: "m_box"}, {Name: "serial"}, {Name: "domain_id"}},
+			DoUpdates: clause.Assignments(
+				map[string]interface{}{
+					"updated_at": gorm.Expr("MAX(updated_at, excluded.updated_at)"),
+				},
+			),
+		},
+	)
+	return nil
 }
 
 type SOARecordBQ struct {
@@ -100,6 +143,20 @@ type MXRecordBQ struct {
 	UpdatedAt time.Time `bigquery:"updated_at"`
 	Mx        string    `bigquery:"mx"`
 	DomainID  int       `bigquery:"domain_id"`
+}
+
+func (d *MXRecord) BeforeCreate(tx *gorm.DB) (err error) {
+	tx.Statement.AddClause(
+		clause.OnConflict{
+			Columns: []clause.Column{{Name: "mx"}, {Name: "domain_id"}},
+			DoUpdates: clause.Assignments(
+				map[string]interface{}{
+					"updated_at": gorm.Expr("MAX(updated_at, excluded.updated_at)"),
+				},
+			),
+		},
+	)
+	return nil
 }
 
 func (m *MXRecord) ToBQ() MXRecordBQ {

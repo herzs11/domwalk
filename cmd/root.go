@@ -45,7 +45,8 @@ var rootCmd = &cobra.Command{
 		domainsToExecute, _ = cmd.Flags().GetStringSlice("domains")
 		fname, _ := cmd.Flags().GetString("file")
 		if fname != "" {
-			domainsToExecute, err := readDomainsFromFile(fname)
+			var err error
+			domainsToExecute, err = readDomainsFromFile(fname)
 			if err != nil {
 				color.Set(color.FgRed)
 				cmd.Println(err)
@@ -62,7 +63,6 @@ var rootCmd = &cobra.Command{
 				domainsToExecute = domainsToExecute[1:]
 			}
 		}
-
 		if foundDomainsOnly, _ := cmd.Flags().GetBool("found-domains-only"); !foundDomainsOnly && len(domainsToExecute) == 0 {
 			color.Set(color.FgRed)
 			cmd.Println("No domains provided, use --domains, --file, or --found-domains-only")

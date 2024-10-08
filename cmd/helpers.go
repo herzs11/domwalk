@@ -152,6 +152,7 @@ func enrichDomainWorker(id int, jobs <-chan *types.Domain, wg *sync.WaitGroup, c
 			err, gorm.ErrRecordNotFound,
 		) {
 			d = *domain
+			color.Yellow("Domain %s not found in database, creating\n", d.DomainName)
 		}
 		if d.LastRanDns.Unix() <= cfg.MinFreshnessDate.Unix() && cfg.DNS {
 			d.GetDNSRecords()
@@ -166,9 +167,14 @@ func enrichDomainWorker(id int, jobs <-chan *types.Domain, wg *sync.WaitGroup, c
 			d.GetDomainsFromSitemap()
 		}
 		db.Mut.Lock()
-		db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(&d)
+		err := db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(&d).Error
+		if err != nil {
+			color.Red("Error saving domain %s: %s\n", d.DomainName, err)
+		}
 		NUM_PROCESSED++
-		color.Green("Worker %d: Processed domain %s, %d out of %d\n", id, domain, NUM_PROCESSED, N_TO_PROCESS)
+		color.Green(
+			"Worker %d: Processed domain %s, %d out of %d\n", id, d.DomainName, NUM_PROCESSED, N_TO_PROCESS,
+		)
 		db.Mut.Unlock()
 	}
 }

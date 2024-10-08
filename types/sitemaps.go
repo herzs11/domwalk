@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/temoto/robotstxt"
 	"gorm.io/gorm"
 )
@@ -158,7 +159,11 @@ func (s *Sitemap) readSitemap() (URLSet, []*Sitemap, error) {
 	if err == nil && len(sitemapIndex.Sitemaps) > 0 {
 		// It's a sitemap index, process each sub-sitemap
 		for _, sitemap := range sitemapIndex.Sitemaps {
-			if !strings.Contains(sitemap.Loc, ".xml") || sitemap.Loc == s.Sitemap {
+			if sitemap.Loc == s.Sitemap {
+				color.Yellow("Infinite recursion detected, skipping sitemap: %s\n", sitemap.Loc)
+				break
+			}
+			if !strings.Contains(sitemap.Loc, ".xml") {
 				continue
 			}
 			s := &Sitemap{DomainID: s.DomainID, Sitemap: sitemap.Loc}
