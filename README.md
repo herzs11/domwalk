@@ -1,6 +1,6 @@
 ## domwalk
 
-CLI tool to find and store domain relationships
+Domwalk 🖇 is a CLI tool to find and store domain relationships
 
 ### Synopsis
 
