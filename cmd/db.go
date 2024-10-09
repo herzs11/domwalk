@@ -61,18 +61,45 @@ var dbCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		snapshot, _ := cmd.Flags().GetBool("snapshot")
-		if push, _ := cmd.Flags().GetBool("push"); push {
-			if snapshot {
-				color.Set(color.FgGreen)
-				cmd.Println("Snapshotting domains")
-				snapshotDomains()
-				color.Unset()
+		backup, _ := cmd.Flags().GetBool("backup")
+		if backup {
+			color.Yellow("Backing up domains")
+			err := backupFile(db.GormDB.DBName)
+			if err != nil {
+				color.Red("Error backing up domains: ", err)
+				os.Exit(1)
 			}
+		}
+		snapshot, _ := cmd.Flags().GetBool("snapshot")
+		if snapshot {
+			color.Yellow("Snapshotting domains\n")
+			err := snapshotDomains()
+			if err != nil {
+				color.Red("Error snapshotting domains: ", err)
+				os.Exit(1)
+			}
+		}
+		if push, _ := cmd.Flags().GetBool("push"); push {
+			color.Set(color.FgGreen)
+			cmd.Println("Snapshotting domains")
+			err := snapshotDomains()
+			if err != nil {
+				color.Red("Error snapshotting domains: ", err)
+				os.Exit(1)
+			}
+			color.Unset()
 			pushToBQ(syncCfg)
+			return
 		}
 		if pull, _ := cmd.Flags().GetBool("pull"); pull {
+			color.Yellow("Backing up domains")
+			err := backupFile(db.GormDB.DBName)
+			if err != nil {
+				color.Red("Error backing up domains: ", err)
+				os.Exit(1)
+			}
 			pullFromBQ(syncCfg)
+			return
 		}
 	},
 }
@@ -80,8 +107,8 @@ var dbCmd = &cobra.Command{
 func init() {
 
 	dbCmd.Flags().String(
-		"bq-dataset", os.Getenv("GORM_BQ_DATASET"),
-		"BQ dataset to sync to, can also set 'GORM_BQ_DATASET' environment variable",
+		"bq-dataset", "domwalk",
+		"BQ dataset to sync to",
 	)
 
 	dbCmd.Flags().Bool("push", false, "Push data to BigQuery")
@@ -94,6 +121,7 @@ func init() {
 	dbCmd.Flags().Bool("web-redirects", false, "Sync web redirect domains")
 	dbCmd.Flags().Bool("dns", false, "Sync DNS data")
 	dbCmd.Flags().Bool("sitemaps", false, "Sync sitemaps")
-	dbCmd.Flags().Bool("snapshot", true, "Snapshot domains")
+	dbCmd.Flags().Bool("snapshot", false, "Snapshot domains (automatically done before push)")
+	dbCmd.Flags().Bool("backup", false, "Backup local db (automatically done before pull)")
 	rootCmd.AddCommand(dbCmd)
 }

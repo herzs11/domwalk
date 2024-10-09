@@ -11,7 +11,12 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var GormDB *gorm.DB
+type DomwalkDB struct {
+	*gorm.DB
+	DBName string
+}
+
+var GormDB DomwalkDB
 var Mut *sync.Mutex
 
 func GormDBConnect(db_name string) error {
@@ -19,12 +24,12 @@ func GormDBConnect(db_name string) error {
 		color.Yellow("Database file does not exist. Creating...\n")
 	}
 	Mut = &sync.Mutex{}
-	var err error
-	GormDB, err = gorm.Open(
+	gdb, err := gorm.Open(
 		sqlite.Open(db_name), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Error),
 		},
 	)
+	GormDB = DomwalkDB{DB: gdb, DBName: db_name}
 	if err != nil {
 		return fmt.Errorf("failed to connect database: %s", err)
 	}

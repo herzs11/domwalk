@@ -6,6 +6,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -32,7 +35,42 @@ type syncConfig struct {
 	Sitemaps           bool
 }
 
+func backupFile(filePath string) error {
+	// Get the directory, filename, and extension of the original file.
+	dir, file := filepath.Split(filePath)
+	fileName, ext, found := strings.Cut(file, ".")
+	if !found {
+		return fmt.Errorf("failed to split file name and extension: %s", file)
+	}
+
+	// Construct the backup file path.
+	backupFilePath := filepath.Join(dir, fmt.Sprintf("%s_bak%s", fileName, ext))
+
+	// Open the original file for reading.
+	src, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open source file: %w", err)
+	}
+	defer src.Close()
+
+	// Create the backup file for writing.
+	dst, err := os.Create(backupFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create backup file: %w", err)
+	}
+	defer dst.Close()
+
+	// Copy the contents of the original file to the backup file.
+	_, err = io.Copy(dst, src)
+	if err != nil {
+		return fmt.Errorf("failed to copy file: %w", err)
+	}
+
+	return nil
+}
+
 func pullFromBQ(cfg syncConfig) {
+
 	fmt.Println("Pulling data from BigQuery")
 	types.ClearTables()
 	types.CreateTables()
@@ -40,7 +78,7 @@ func pullFromBQ(cfg syncConfig) {
 	if cfg.Domains {
 		doms := []types.Domain{}
 		color.Green("Pulling domains")
-		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.domains ORDER BY id", cfg.Dataset))
+		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.domains ORDER BY domain_name", cfg.Dataset))
 		rows, err := q.Read(context.Background())
 		if err != nil {
 			log.Fatalf("Failed to read rows: %v", err)

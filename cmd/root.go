@@ -174,8 +174,8 @@ func init() {
 	rootCmd.Flags().Bool("header", true, "File with domains to process has a header row")
 
 	rootCmd.PersistentFlags().String(
-		"gorm-db", os.Getenv("GORM_SQLITE_NAME"),
-		"GORM SQLite database name, can also set 'GORM_SQLITE_NAME' environment variable",
+		"gorm-db", os.Getenv("DOMWALK_SQLITE_NAME"),
+		"GORM SQLite database name, can also set 'DOMWALK_SQLITE_NAME' environment variable",
 	)
 
 	// Get minimum date to refresh

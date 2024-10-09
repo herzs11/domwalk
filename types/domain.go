@@ -62,7 +62,6 @@ func (d *Domain) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type DomainBQ struct {
-	ID                   int                 `bigquery:"id"`
 	CreatedAt            time.Time           `bigquery:"created_at"`
 	UpdatedAt            time.Time           `bigquery:"updated_at"`
 	DomainName           string              `bigquery:"domain_name"`
