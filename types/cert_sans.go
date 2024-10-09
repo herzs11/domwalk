@@ -11,7 +11,7 @@ import (
 )
 
 type CertSansDomain struct {
-	MatchedDomain
+	MatchedDomain `json:"certSanDomain,omitempty"`
 }
 
 func (d *Domain) GetCertSANs() error {

@@ -27,12 +27,12 @@ type Domain struct {
 	LastRanDns            time.Time              `json:"lastRanDNS,omitempty" bigquery:"last_ran_dns"`
 	LastRanCertSans       time.Time              `json:"lastRanCertSANs,omitempty" bigquery:"last_ran_cert_sans"`
 	LastRanSitemapParse   time.Time              `json:"lastRanSitemapParse,omitempty" bigquery:"last_ran_sitemap_parse"`
-	ARecords              []ARecord              `bigquery:"-" gorm:"foreignKey:DomainName"`
-	AAAARecords           []AAAARecord           `bigquery:"-" gorm:"foreignKey:DomainName"`
-	MXRecords             []MXRecord             `bigquery:"-" gorm:"foreignKey:DomainName"`
-	SOARecords            []SOARecord            `bigquery:"-" gorm:"foreignKey:DomainName"`
-	Sitemaps              []*Sitemap             `json:"sitemaps,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
-	WebRedirectDomains    []WebRedirectDomain    `json:"landedWebHost,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
+	ARecords              []ARecord              `json:"aRecords,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
+	AAAARecords           []AAAARecord           `json:"aaaaRecords,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
+	MXRecords             []MXRecord             `json:"mxRecords,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
+	SOARecords            []SOARecord            `json:"soaRecords,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
+	Sitemaps              []*Sitemap             `json:"-" bigquery:"-" gorm:"foreignKey:DomainName"`
+	WebRedirectDomains    []WebRedirectDomain    `json:"webRedirectDomains,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
 	CertSANs              []CertSansDomain       `json:"certSANs,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
 	SitemapWebDomains     []SitemapWebDomain     `json:"sitemapWebDomains,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
 	SitemapContactDomains []SitemapContactDomain `json:"sitemapContactDomains,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`

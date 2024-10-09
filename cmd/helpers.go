@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -12,11 +13,13 @@ import (
 	"domwalk/types"
 	"github.com/fatih/color"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
 	N_TO_PROCESS  int
 	NUM_PROCESSED int
+	JSON_OUT      [][]byte
 )
 
 type enrichmentConfig struct {
@@ -29,6 +32,7 @@ type enrichmentConfig struct {
 	Offset           int
 	NWorkers         int
 	MinFreshnessDate time.Time
+	OutputToJSON     bool
 }
 
 func readDomainsFromFile(filename string) ([]string, error) {
@@ -148,7 +152,9 @@ func enrichDomainWorker(id int, jobs <-chan *types.Domain, wg *sync.WaitGroup, c
 	defer wg.Done()
 	for domain := range jobs {
 		var d = types.Domain{}
-		if err := db.GormDB.Where("domain_name = ?", domain.DomainName).First(&d).Error; errors.Is(
+		if err := db.GormDB.Preload(clause.Associations).Where(
+			"domain_name = ?", domain.DomainName,
+		).First(&d).Error; errors.Is(
 			err, gorm.ErrRecordNotFound,
 		) {
 			d = *domain
@@ -167,6 +173,16 @@ func enrichDomainWorker(id int, jobs <-chan *types.Domain, wg *sync.WaitGroup, c
 			d.GetDomainsFromSitemap()
 		}
 		db.Mut.Lock()
+		if cfg.OutputToJSON {
+			var dat []byte
+			var err error
+			dat, err = json.MarshalIndent(d, "", "    ")
+			if err != nil {
+				color.Red("Error marshalling domain %s: %s\n", d.DomainName, err)
+			}
+			JSON_OUT = append(JSON_OUT, dat)
+		}
+
 		err := db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(&d).Error
 		if err != nil {
 			color.Red("Error saving domain %s: %s\n", d.DomainName, err)
@@ -177,4 +193,19 @@ func enrichDomainWorker(id int, jobs <-chan *types.Domain, wg *sync.WaitGroup, c
 		)
 		db.Mut.Unlock()
 	}
+}
+
+func writeJSONToFile(filename string) error {
+	f, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("error creating file: %w", err)
+	}
+	defer f.Close()
+	for _, j := range JSON_OUT {
+		_, err = f.Write(j)
+		if err != nil {
+			return fmt.Errorf("error writing to file: %w", err)
+		}
+	}
+	return nil
 }

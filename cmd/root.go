@@ -111,6 +111,7 @@ var rootCmd = &cobra.Command{
 			sc = true
 			dns = true
 		}
+		jo, _ := cmd.Flags().GetBool("json")
 		enrichCfg = enrichmentConfig{
 			CertSans:         cs,
 			DNS:              dns,
@@ -121,6 +122,7 @@ var rootCmd = &cobra.Command{
 			Offset:           offset,
 			NWorkers:         workers,
 			MinFreshnessDate: staleDate,
+			OutputToJSON:     jo,
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -128,6 +130,25 @@ var rootCmd = &cobra.Command{
 			enrichDomainNames(domainsToExecute, enrichCfg)
 		} else {
 			enrichDBDomains(enrichCfg)
+		}
+	},
+	PostRun: func(cmd *cobra.Command, args []string) {
+		jo, _ := cmd.Flags().GetBool("json")
+		of, _ := cmd.Flags().GetString("output")
+		if jo {
+			color.Yellow("Results output to JSON\n")
+			if of == "" {
+				// Pretty print JSON_OUT object
+				for _, j := range JSON_OUT {
+					color.Green(string(j))
+				}
+			} else {
+				// Write JSON_OUT object to file
+				err := writeJSONToFile(of)
+				if err != nil {
+					color.Red("Error writing JSON to file: %v\n", err)
+				}
+			}
 		}
 	},
 }
@@ -169,4 +190,6 @@ func init() {
 	rootCmd.Flags().IntP("workers", "w", 15, "Number of concurrent workers to use")
 	rootCmd.Flags().IntP("limit", "l", 3000, "Limit of domains to process")
 	rootCmd.Flags().IntP("offset", "s", 0, "Offset of domains to process")
+	rootCmd.Flags().Bool("json", false, "Output results in JSON format")
+	rootCmd.Flags().StringP("output", "o", "", "Output JSON file for results, only to be used with --json")
 }
