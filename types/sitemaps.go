@@ -31,25 +31,36 @@ type SitemapIndex struct {
 
 type Sitemap struct {
 	gorm.Model
-	DomainID uint   `json:"domainName,omitempty" bigquery:"domain_name"`
-	Sitemap  string `json:"sitemap,omitempty" bigquery:"sitemap"`
+	DomainName string `json:"domainName,omitempty" bigquery:"domain_name"`
+	Sitemap    string `json:"sitemap,omitempty" bigquery:"sitemap"`
 }
 
 type SitemapBQ struct {
-	ID        int       `bigquery:"id"`
-	CreatedAt time.Time `bigquery:"created_at"`
-	UpdatedAt time.Time `bigquery:"updated_at"`
-	DomainID  int       `bigquery:"domain_id"`
-	Sitemap   string    `bigquery:"sitemap"`
+	ID         int       `bigquery:"id"`
+	CreatedAt  time.Time `bigquery:"created_at"`
+	UpdatedAt  time.Time `bigquery:"updated_at"`
+	DomainName string    `bigquery:"domain_name"`
+	Sitemap    string    `bigquery:"sitemap"`
 }
 
 func (s *Sitemap) ToBQ() SitemapBQ {
 	return SitemapBQ{
-		ID:        int(s.ID),
-		CreatedAt: s.CreatedAt,
-		UpdatedAt: s.UpdatedAt,
-		DomainID:  int(s.DomainID),
-		Sitemap:   s.Sitemap,
+		ID:         int(s.ID),
+		CreatedAt:  s.CreatedAt,
+		UpdatedAt:  s.UpdatedAt,
+		DomainName: s.DomainName,
+		Sitemap:    s.Sitemap,
+	}
+}
+
+func (s *SitemapBQ) ToGorm() Sitemap {
+	return Sitemap{
+		Model: gorm.Model{
+			CreatedAt: s.CreatedAt,
+			UpdatedAt: s.UpdatedAt,
+		},
+		DomainName: s.DomainName,
+		Sitemap:    s.Sitemap,
 	}
 }
 
@@ -103,7 +114,7 @@ func (d *Domain) getRobotstxt() error {
 		robots.Sitemaps = robots.Sitemaps[:11]
 	}
 	for _, sitemap := range robots.Sitemaps {
-		d.Sitemaps = append(d.Sitemaps, &Sitemap{DomainID: d.ID, Sitemap: sitemap})
+		d.Sitemaps = append(d.Sitemaps, &Sitemap{DomainName: d.DomainName, Sitemap: sitemap})
 	}
 
 	return nil
@@ -166,7 +177,7 @@ func (s *Sitemap) readSitemap() (URLSet, []*Sitemap, error) {
 			if !strings.Contains(sitemap.Loc, ".xml") {
 				continue
 			}
-			s := &Sitemap{DomainID: s.DomainID, Sitemap: sitemap.Loc}
+			s := &Sitemap{DomainName: s.DomainName, Sitemap: sitemap.Loc}
 			sms = append(sms, s)
 			if len(sms) > 200 {
 				break
@@ -243,7 +254,7 @@ func (d *Domain) GetWebDomainsFromSitemap() {
 		}
 		if _, exists := domsFound[dom.DomainName]; !exists {
 			domsFound[dom.DomainName] = true
-			sd := SitemapWebDomain{MatchedDomain{DomainID: d.ID, Domain: *dom}}
+			sd := SitemapWebDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dom}}
 			d.SitemapWebDomains = append(d.SitemapWebDomains, sd)
 		}
 	}
@@ -310,7 +321,7 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 			}
 			if _, exists := domsFound[dom.DomainName]; !exists {
 				domsFound[dom.DomainName] = true
-				sd := SitemapContactDomain{MatchedDomain{DomainID: d.ID, Domain: *dom}}
+				sd := SitemapContactDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dom}}
 				d.SitemapContactDomains = append(d.SitemapContactDomains, sd)
 			}
 		}

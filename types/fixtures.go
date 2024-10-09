@@ -9,27 +9,38 @@ import (
 
 type MatchedDomain struct {
 	gorm.Model
-	DomainID        uint   `json:"reqDomainName,omitempty" bigquery:"domain_name" gorm:"index:,unique,composite:dom_match"`
-	MatchedDomainID uint   `json:"certSanDomainName,omitempty" bigquery:"matched_domain_name" gorm:"index:,unique,composite:dom_match"`
-	Domain          Domain `json:"certSanDomain,omitempty" gorm:"foreignKey:MatchedDomainID" bigquery:"-"`
+	DomainName        string `json:"reqDomainName,omitempty" bigquery:"domain_name" gorm:"index:,unique,composite:dom_match"`
+	MatchedDomainName string `json:"certSanDomainName,omitempty" bigquery:"matched_domain_name" gorm:"index:,unique,composite:dom_match"`
+	Domain            Domain `json:"certSanDomain,omitempty" gorm:"foreignKey:MatchedDomainName" bigquery:"-"`
 }
 
 func (m *MatchedDomain) ToBQ() MatchedDomainBQ {
 	return MatchedDomainBQ{
-		ID:              int(m.ID),
-		CreatedAt:       m.CreatedAt,
-		UpdatedAt:       m.UpdatedAt,
-		DomainID:        int(m.DomainID),
-		MatchedDomainID: int(m.MatchedDomainID),
+		ID:                int(m.ID),
+		CreatedAt:         m.CreatedAt,
+		UpdatedAt:         m.UpdatedAt,
+		DomainName:        m.DomainName,
+		MatchedDomainName: m.MatchedDomainName,
 	}
 }
 
 type MatchedDomainBQ struct {
-	ID              int       `bigquery:"id"`
-	CreatedAt       time.Time `bigquery:"created_at"`
-	UpdatedAt       time.Time `bigquery:"updated_at"`
-	DomainID        int       `bigquery:"domain_id"`
-	MatchedDomainID int       `bigquery:"matched_domain_id"`
+	ID                int       `bigquery:"id"`
+	CreatedAt         time.Time `bigquery:"created_at"`
+	UpdatedAt         time.Time `bigquery:"updated_at"`
+	DomainName        string    `bigquery:"domain_name"`
+	MatchedDomainName string    `bigquery:"matched_domain_name"`
+}
+
+func (m *MatchedDomainBQ) ToGorm() MatchedDomain {
+	return MatchedDomain{
+		Model: gorm.Model{
+			CreatedAt: m.CreatedAt,
+			UpdatedAt: m.UpdatedAt,
+		},
+		DomainName:        m.DomainName,
+		MatchedDomainName: m.MatchedDomainName,
+	}
 }
 
 func ClearTables() {

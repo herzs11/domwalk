@@ -25,7 +25,10 @@ func TestMain(m *testing.M) {
 
 func TestDomains(t *testing.T) {
 	doms := []string{
-		"leicabiosystems.com",
+		"levistrauss.com",
+		"google.com",
+		"levi.com",
+		"ukg.com",
 	}
 
 	for _, dom := range doms {
@@ -42,12 +45,12 @@ func TestDomains(t *testing.T) {
 
 		db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(d)
 		time.Sleep(1 * time.Second)
-		// d2, err := NewDomain("levistrauss.com")
-		// if err != nil {
-		// 	t.Errorf("Error parsing domain %s: %s\n", d2.DomainName, err)
-		// }
-		// d2.GetCertSANs()
-		// db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(d2)
+		d2, err := NewDomain("levistrauss.com")
+		if err != nil {
+			t.Errorf("Error parsing domain %s: %s\n", d2.DomainName, err)
+		}
+		d2.GetCertSANs()
+		db.GormDB.Session(&gorm.Session{FullSaveAssociations: true}).Save(d2)
 		db.Mut.Unlock()
 	}
 

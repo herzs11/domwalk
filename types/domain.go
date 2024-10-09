@@ -14,8 +14,9 @@ import (
 )
 
 type Domain struct {
-	gorm.Model
-	DomainName            string                 `json:"domainName,omitempty" gorm:"uniqueIndex" bigquery:"domain_name"`
+	DomainName            string                 `json:"domainName,omitempty" gorm:"primaryKey" bigquery:"domain_name"`
+	CreatedAt             time.Time              `json:"createdAt,omitempty" bigquery:"created_at"`
+	UpdatedAt             time.Time              `json:"updatedAt,omitempty" bigquery:"updated_at"`
 	NonPublicDomain       bool                   `json:"nonPublicDomain,omitempty" bigquery:"non_public_domain"`
 	Hostname              string                 `json:"hostname,omitempty" bigquery:"hostname,nullable"`
 	Subdomain             string                 `json:"subdomain,omitempty" bigquery:"subdomain,nullable"`
@@ -26,15 +27,15 @@ type Domain struct {
 	LastRanDns            time.Time              `json:"lastRanDNS,omitempty" bigquery:"last_ran_dns"`
 	LastRanCertSans       time.Time              `json:"lastRanCertSANs,omitempty" bigquery:"last_ran_cert_sans"`
 	LastRanSitemapParse   time.Time              `json:"lastRanSitemapParse,omitempty" bigquery:"last_ran_sitemap_parse"`
-	ARecords              []ARecord              `bigquery:"-"`
-	AAAARecords           []AAAARecord           `bigquery:"-"`
-	MXRecords             []MXRecord             `bigquery:"-"`
-	SOARecords            []SOARecord            `bigquery:"-"`
-	Sitemaps              []*Sitemap             `json:"sitemaps,omitempty" bigquery:"-"`
-	WebRedirectDomains    []WebRedirectDomain    `json:"landedWebHost,omitempty" bigquery:"-"`
-	CertSANs              []CertSansDomain       `json:"certSANs,omitempty" bigquery:"-"`
-	SitemapWebDomains     []SitemapWebDomain     `json:"sitemapWebDomains,omitempty" bigquery:"-"`
-	SitemapContactDomains []SitemapContactDomain `json:"sitemapContactDomains,omitempty" bigquery:"-"`
+	ARecords              []ARecord              `bigquery:"-" gorm:"foreignKey:DomainName"`
+	AAAARecords           []AAAARecord           `bigquery:"-" gorm:"foreignKey:DomainName"`
+	MXRecords             []MXRecord             `bigquery:"-" gorm:"foreignKey:DomainName"`
+	SOARecords            []SOARecord            `bigquery:"-" gorm:"foreignKey:DomainName"`
+	Sitemaps              []*Sitemap             `json:"sitemaps,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
+	WebRedirectDomains    []WebRedirectDomain    `json:"landedWebHost,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
+	CertSANs              []CertSansDomain       `json:"certSANs,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
+	SitemapWebDomains     []SitemapWebDomain     `json:"sitemapWebDomains,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
+	SitemapContactDomains []SitemapContactDomain `json:"sitemapContactDomains,omitempty" bigquery:"-" gorm:"foreignKey:DomainName"`
 
 	sitemapURLs  []string `gorm:"-"`
 	contactPages []string `gorm:"-"`
@@ -77,12 +78,29 @@ type DomainBQ struct {
 	LastRanSitemapParse  time.Time           `bigquery:"last_ran_sitemap_parse"`
 }
 
+func (dbq *DomainBQ) ToGorm() Domain {
+	return Domain{
+		CreatedAt:            dbq.CreatedAt,
+		UpdatedAt:            dbq.UpdatedAt,
+		DomainName:           dbq.DomainName,
+		NonPublicDomain:      dbq.NonPublicDomain,
+		Hostname:             dbq.Hostname.String(),
+		Subdomain:            dbq.Subdomain.String(),
+		Suffix:               dbq.Suffix.String(),
+		SuccessfulWebLanding: dbq.SuccessfulWebLanding,
+		WebRedirectURLFinal:  dbq.WebRedirectURLFinal.String(),
+		LastRanWebRedirect:   dbq.LastRanWebRedirect,
+		LastRanDns:           dbq.LastRanDns,
+		LastRanCertSans:      dbq.LastRanCertSans,
+		LastRanSitemapParse:  dbq.LastRanSitemapParse,
+	}
+}
+
 func (d *Domain) ToBQ() DomainBQ {
 	return DomainBQ{
-		ID:                   int(d.ID),
+		DomainName:           d.DomainName,
 		CreatedAt:            d.CreatedAt,
 		UpdatedAt:            d.UpdatedAt,
-		DomainName:           d.DomainName,
 		NonPublicDomain:      d.NonPublicDomain,
 		Hostname:             bigquery.NullString{d.Hostname, d.Hostname != ""},
 		Subdomain:            bigquery.NullString{d.Subdomain, d.Subdomain != ""},

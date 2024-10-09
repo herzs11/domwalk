@@ -22,7 +22,7 @@ func GormDBConnect(db_name string) error {
 	var err error
 	GormDB, err = gorm.Open(
 		sqlite.Open(db_name), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Error),
+			Logger: logger.Default.LogMode(logger.Info),
 		},
 	)
 	if err != nil {

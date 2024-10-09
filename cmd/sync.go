@@ -11,8 +11,10 @@ import (
 	"cloud.google.com/go/bigquery"
 	"domwalk/db"
 	"domwalk/types"
+	"github.com/fatih/color"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/idtoken"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -31,7 +33,280 @@ type syncConfig struct {
 
 func pullFromBQ(cfg syncConfig) {
 	fmt.Println("Pulling data from BigQuery")
-	// TODO: Implement pulling data from BigQuery
+	types.ClearTables()
+	types.CreateTables()
+	if cfg.Domains {
+		doms := []types.Domain{}
+		color.Green("Pulling domains")
+		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.domains ORDER BY id", cfg.Dataset))
+		rows, err := q.Read(context.Background())
+		if err != nil {
+			log.Fatalf("Failed to read rows: %v", err)
+		}
+		for {
+			var d types.DomainBQ
+			err := rows.Next(&d)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Failed to read row: %v", err)
+			}
+			dom := d.ToGorm()
+			doms = append(doms, dom)
+		}
+		color.Yellow("Creating %d rows", len(doms))
+		for _, d := range doms {
+			err = db.GormDB.Save(&d).Error
+			if err != nil {
+				log.Fatalf("Failed to save domain: %v", err)
+			}
+
+		}
+	}
+	if cfg.CertSansDomains {
+		csans := []types.CertSansDomain{}
+		color.Green("Pulling cert sans domains")
+		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.cert_sans_domains ORDER BY id", cfg.Dataset))
+		rows, err := q.Read(context.Background())
+		if err != nil {
+			log.Fatalf("Failed to read rows: %v", err)
+		}
+		for {
+			var d types.MatchedDomainBQ
+			err := rows.Next(&d)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Failed to read row: %v", err)
+			}
+			csan := types.CertSansDomain{MatchedDomain: d.ToGorm()}
+			csans = append(csans, csan)
+		}
+		color.Yellow("Creating %d rows", len(csans))
+		for _, c := range csans {
+			err = db.GormDB.Save(&c).Error
+			if err != nil {
+				log.Fatalf("Failed to save cert sans domain: %v", err)
+			}
+		}
+	}
+	if cfg.DNS {
+		mxs := []types.MXRecord{}
+		color.Green("Pulling DNS records")
+		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.mx_records ORDER BY id", cfg.Dataset))
+		rows, err := q.Read(context.Background())
+		if err != nil {
+			log.Fatalf("Failed to read rows: %v", err)
+		}
+		for {
+			var d types.MXRecordBQ
+			err := rows.Next(&d)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Failed to read row: %v", err)
+			}
+			mxr := d.ToGorm()
+			mxs = append(mxs, mxr)
+		}
+		color.Yellow("Creating %d rows", len(mxs))
+		for _, m := range mxs {
+			err = db.GormDB.Save(&m).Error
+			if err != nil {
+				log.Fatalf("Failed to save mx record: %v", err)
+			}
+		}
+
+		ars := []types.ARecord{}
+		q = db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.a_records ORDER BY id", cfg.Dataset))
+		rows, err = q.Read(context.Background())
+		if err != nil {
+			log.Fatalf("Failed to read rows: %v", err)
+		}
+		for {
+			var d types.ARecordBQ
+			err := rows.Next(&d)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Failed to read row: %v", err)
+			}
+			ar := d.ToGorm()
+			ars = append(ars, ar)
+		}
+		color.Yellow("Creating %d rows", len(ars))
+		for _, a := range ars {
+			err = db.GormDB.Save(&a).Error
+			if err != nil {
+				log.Fatalf("Failed to save a record: %v", err)
+			}
+		}
+
+		aars := []types.AAAARecord{}
+		q = db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.aaaa_records ORDER BY id", cfg.Dataset))
+		rows, err = q.Read(context.Background())
+		if err != nil {
+			log.Fatalf("Failed to read rows: %v", err)
+		}
+		for {
+			var d types.AAAARecordBQ
+			err := rows.Next(&d)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Failed to read row: %v", err)
+			}
+			ar := d.ToGorm()
+			aars = append(aars, ar)
+		}
+		color.Yellow("Creating %d rows", len(aars))
+		for _, a := range aars {
+			err = db.GormDB.Save(&a).Error
+			if err != nil {
+				log.Fatalf("Failed to save aaaa record: %v", err)
+			}
+		}
+
+		soas := []types.SOARecord{}
+		q = db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.soa_records ORDER BY id", cfg.Dataset))
+		rows, err = q.Read(context.Background())
+		if err != nil {
+			log.Fatalf("Failed to read rows: %v", err)
+		}
+		for {
+			var d types.SOARecordBQ
+			err := rows.Next(&d)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Failed to read row: %v", err)
+			}
+			ar := d.ToGorm()
+			soas = append(soas, ar)
+		}
+		color.Yellow("Creating %d rows", len(soas))
+		for _, s := range soas {
+			err = db.GormDB.Save(&s).Error
+			if err != nil {
+				log.Fatalf("Failed to save soa record: %v", err)
+			}
+		}
+	}
+
+	if cfg.WebRedirectDomains {
+		wred := []types.WebRedirectDomain{}
+		color.Green("Pulling web redirect domains")
+		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.web_redirect_domains ORDER BY id", cfg.Dataset))
+		rows, err := q.Read(context.Background())
+		if err != nil {
+			log.Fatalf("Failed to read rows: %v", err)
+		}
+		for {
+			var d types.MatchedDomainBQ
+			err := rows.Next(&d)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Failed to read row: %v", err)
+			}
+			wr := types.WebRedirectDomain{MatchedDomain: d.ToGorm()}
+			wred = append(wred, wr)
+		}
+		color.Yellow("Creating %d rows", len(wred))
+		for _, w := range wred {
+			err = db.GormDB.Save(&w).Error
+			if err != nil {
+				log.Fatalf("Failed to save web redirect domain: %v", err)
+			}
+		}
+	}
+	if cfg.Sitemaps {
+		sms := []types.Sitemap{}
+		color.Green("Pulling sitemaps")
+		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.sitemaps ORDER BY id", cfg.Dataset))
+		rows, err := q.Read(context.Background())
+		if err != nil {
+			log.Fatalf("Failed to read rows: %v", err)
+		}
+		for {
+			var d types.SitemapBQ
+			err := rows.Next(&d)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Failed to read row: %v", err)
+			}
+			s := d.ToGorm()
+			sms = append(sms, s)
+		}
+		color.Yellow("Creating %d rows", len(sms))
+		for _, s := range sms {
+			err = db.GormDB.Save(&s).Error
+			if err != nil {
+				log.Fatalf("Failed to save sitemap: %v", err)
+			}
+		}
+
+		smwd := []types.SitemapWebDomain{}
+		q = db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.sitemap_web_domains ORDER BY id", cfg.Dataset))
+		rows, err = q.Read(context.Background())
+		if err != nil {
+			log.Fatalf("Failed to read rows: %v", err)
+		}
+		for {
+			var d types.MatchedDomainBQ
+			err := rows.Next(&d)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Failed to read row: %v", err)
+			}
+			swd := types.SitemapWebDomain{MatchedDomain: d.ToGorm()}
+			smwd = append(smwd, swd)
+		}
+		color.Yellow("Creating %d rows", len(smwd))
+		for _, s := range smwd {
+			err = db.GormDB.Save(&s).Error
+			if err != nil {
+				log.Fatalf("Failed to save sitemap web domain: %v", err)
+			}
+		}
+
+		scds := []types.SitemapContactDomain{}
+		q = db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.sitemap_contact_domains ORDER BY id", cfg.Dataset))
+		rows, err = q.Read(context.Background())
+		if err != nil {
+			log.Fatalf("Failed to read rows: %v", err)
+		}
+		for {
+			var d types.MatchedDomainBQ
+			err := rows.Next(&d)
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Failed to read row: %v", err)
+			}
+			scd := types.SitemapContactDomain{MatchedDomain: d.ToGorm()}
+			scds = append(scds, scd)
+		}
+		color.Yellow("Creating %d rows", len(scds))
+		for _, s := range scds {
+			err = db.GormDB.Save(&s).Error
+			if err != nil {
+				log.Fatalf("Failed to save sitemap contact domain: %v", err)
+			}
+		}
+	}
 }
 
 func pushToBQ(cfg syncConfig) {
