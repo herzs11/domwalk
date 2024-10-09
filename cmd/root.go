@@ -24,8 +24,17 @@ var rootCmd = &cobra.Command{
 	Short: "CLI tool to find and store domain relationships",
 	Long: `domwalk is a CLI tool to find and store domain relationships.
 	It is written in Go and uses GORM and a local SQLite backend.
+	Data is stored in a local SQLite database and can be pushed to BigQuery.
 
-	There is a 'sync' command that pushes and pulls the data to and from bigquery.`,
+	Currently, the tool can enrich domains with the following relationships:
+	- Certificate Subject Alternative Names (SANs)
+	- Web Redirects
+	- Sitemap Web Domains
+	- Sitemap Contact Page Domains
+
+	The tool can also enrich domains with DNS data. In a future version, this dns data will be used to form additional domain relationships
+	`,
+	Example: `domwalk -d unum.com,coloniallife.com --workers 20 --cert-sans --web-redirects --sitemaps-web --sitemaps-contact --dns --gorm-db domwalk.db`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		gormDBName, _ := cmd.Flags().GetString("gorm-db")
 		if gormDBName == "" {
@@ -157,7 +166,7 @@ func init() {
 	rootCmd.Flags().Bool("sitemaps-contact", false, "Enrich domains with sitemap contact page scraped domains")
 	rootCmd.Flags().Bool("dns", false, "Enrich domains with dns data")
 
-	rootCmd.Flags().IntP("workers", "w", 15, "Number of workers to use")
+	rootCmd.Flags().IntP("workers", "w", 15, "Number of concurrent workers to use")
 	rootCmd.Flags().IntP("limit", "l", 3000, "Limit of domains to process")
 	rootCmd.Flags().IntP("offset", "s", 0, "Offset of domains to process")
 }

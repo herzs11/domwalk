@@ -3,13 +3,20 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"time"
 
 	"cloud.google.com/go/bigquery"
 	"domwalk/db"
 	"domwalk/types"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/idtoken"
+	"google.golang.org/api/option"
 )
+
+const SNAPSHOT_JOB_URL = "https://snapshot-domwalk-593149879404.us-central1.run.app"
 
 var dataset *bigquery.Dataset
 
@@ -316,5 +323,44 @@ func recreateTable(model interface{}, tableName string) error {
 		return err
 	}
 	fmt.Printf("Table %s created\n", tableName)
+	return nil
+}
+
+func snapshotDomains() error {
+
+	// client, err := google.DefaultClient(context.Background(), "https://snapshot-domwalk-593149879404.us-central1.run.app")
+	ctx := context.Background()
+
+	// Construct the GoogleCredentials object which obtains the default configuration from your
+	// working environment.
+	credentials, err := google.FindDefaultCredentials(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to generate default credentials: %w", err)
+	}
+
+	ts, err := idtoken.NewTokenSource(ctx, SNAPSHOT_JOB_URL, option.WithCredentials(credentials))
+	if err != nil {
+		return fmt.Errorf("failed to create NewTokenSource: %w", err)
+	}
+
+	// Get the ID token.
+	// Once you've obtained the ID token, you can use it to make an authenticated call
+	// to the target audience.
+	tok, err := ts.Token()
+	if err != nil {
+		return fmt.Errorf("failed to receive token: %w", err)
+	}
+	req, err := http.NewRequest("GET", SNAPSHOT_JOB_URL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tok.AccessToken))
+	resp, err := http.DefaultClient.Do(req)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(body))
 	return nil
 }

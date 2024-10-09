@@ -4,6 +4,7 @@ go 1.23.1
 
 require (
 	cloud.google.com/go/bigquery v1.63.0
+	cloud.google.com/go/functions v1.19.1
 	github.com/fatih/color v1.17.0
 	github.com/miekg/dns v1.1.62
 	github.com/spf13/cobra v1.8.1
@@ -19,6 +20,7 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
 	cloud.google.com/go/iam v1.2.0 // indirect
+	cloud.google.com/go/longrunning v0.6.0 // indirect
 	github.com/apache/arrow/go/v15 v15.0.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect

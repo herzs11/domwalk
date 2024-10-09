@@ -18,13 +18,11 @@ var (
 // dbCmd represents the db command
 var dbCmd = &cobra.Command{
 	Use:   "db",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Pushing and pulling data to and from BigQuery",
+	Long: `This command is used to push and pull data to and from BigQuery.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+    The --push flag snapshots the current BQ dataset into the domwalk_snapshots dataset, then overwrites the current BQ dataset with the data from the local SQLite database`,
+	Example: "domwalk db --push --gorm-db domwalk.db --bq-dataset domwalk",
 	PreRun: func(cmd *cobra.Command, args []string) {
 
 		bq_dataset, err := cmd.Flags().GetString("bq-dataset")
@@ -63,7 +61,14 @@ to quickly create a Cobra application.`,
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		snapshot, _ := cmd.Flags().GetBool("snapshot")
 		if push, _ := cmd.Flags().GetBool("push"); push {
+			if snapshot {
+				color.Set(color.FgGreen)
+				cmd.Println("Snapshotting domains")
+				snapshotDomains()
+				color.Unset()
+			}
 			pushToBQ(syncCfg)
 		}
 		if pull, _ := cmd.Flags().GetBool("pull"); pull {
@@ -89,5 +94,6 @@ func init() {
 	dbCmd.Flags().Bool("web-redirects", false, "Sync web redirect domains")
 	dbCmd.Flags().Bool("dns", false, "Sync DNS data")
 	dbCmd.Flags().Bool("sitemaps", false, "Sync sitemaps")
+	dbCmd.Flags().Bool("snapshot", true, "Snapshot domains")
 	rootCmd.AddCommand(dbCmd)
 }
