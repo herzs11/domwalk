@@ -12,6 +12,7 @@ import (
 	"domwalk/db"
 	"domwalk/types"
 	"github.com/fatih/color"
+	"github.com/schollz/progressbar/v3"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/idtoken"
 	"google.golang.org/api/iterator"
@@ -35,6 +36,7 @@ func pullFromBQ(cfg syncConfig) {
 	fmt.Println("Pulling data from BigQuery")
 	types.ClearTables()
 	types.CreateTables()
+	var pb *progressbar.ProgressBar
 	if cfg.Domains {
 		doms := []types.Domain{}
 		color.Green("Pulling domains")
@@ -56,8 +58,10 @@ func pullFromBQ(cfg syncConfig) {
 			doms = append(doms, dom)
 		}
 		color.Yellow("Creating %d rows", len(doms))
+		pb = progressbar.Default(int64(len(doms)), "Creating domains")
 		for _, d := range doms {
 			err = db.GormDB.Save(&d).Error
+			pb.Add(1)
 			if err != nil {
 				log.Fatalf("Failed to save domain: %v", err)
 			}
@@ -85,8 +89,10 @@ func pullFromBQ(cfg syncConfig) {
 			csans = append(csans, csan)
 		}
 		color.Yellow("Creating %d rows", len(csans))
+		pb = progressbar.Default(int64(len(csans)), "Creating cert sans domains")
 		for _, c := range csans {
 			err = db.GormDB.Save(&c).Error
+			pb.Add(1)
 			if err != nil {
 				log.Fatalf("Failed to save cert sans domain: %v", err)
 			}
@@ -113,8 +119,10 @@ func pullFromBQ(cfg syncConfig) {
 			mxs = append(mxs, mxr)
 		}
 		color.Yellow("Creating %d rows", len(mxs))
+		pb = progressbar.Default(int64(len(mxs)), "Creating mx records")
 		for _, m := range mxs {
 			err = db.GormDB.Save(&m).Error
+			pb.Add(1)
 			if err != nil {
 				log.Fatalf("Failed to save mx record: %v", err)
 			}
@@ -139,8 +147,10 @@ func pullFromBQ(cfg syncConfig) {
 			ars = append(ars, ar)
 		}
 		color.Yellow("Creating %d rows", len(ars))
+		pb = progressbar.Default(int64(len(ars)), "Creating a records")
 		for _, a := range ars {
 			err = db.GormDB.Save(&a).Error
+			pb.Add(1)
 			if err != nil {
 				log.Fatalf("Failed to save a record: %v", err)
 			}
@@ -165,8 +175,10 @@ func pullFromBQ(cfg syncConfig) {
 			aars = append(aars, ar)
 		}
 		color.Yellow("Creating %d rows", len(aars))
+		pb = progressbar.Default(int64(len(aars)), "Creating aaaa records")
 		for _, a := range aars {
 			err = db.GormDB.Save(&a).Error
+			pb.Add(1)
 			if err != nil {
 				log.Fatalf("Failed to save aaaa record: %v", err)
 			}
@@ -191,8 +203,10 @@ func pullFromBQ(cfg syncConfig) {
 			soas = append(soas, ar)
 		}
 		color.Yellow("Creating %d rows", len(soas))
+		pb = progressbar.Default(int64(len(soas)), "Creating soa records")
 		for _, s := range soas {
 			err = db.GormDB.Save(&s).Error
+			pb.Add(1)
 			if err != nil {
 				log.Fatalf("Failed to save soa record: %v", err)
 			}
@@ -220,8 +234,10 @@ func pullFromBQ(cfg syncConfig) {
 			wred = append(wred, wr)
 		}
 		color.Yellow("Creating %d rows", len(wred))
+		pb = progressbar.Default(int64(len(wred)), "Creating web redirect records")
 		for _, w := range wred {
 			err = db.GormDB.Save(&w).Error
+			pb.Add(1)
 			if err != nil {
 				log.Fatalf("Failed to save web redirect domain: %v", err)
 			}
@@ -248,8 +264,10 @@ func pullFromBQ(cfg syncConfig) {
 			sms = append(sms, s)
 		}
 		color.Yellow("Creating %d rows", len(sms))
+		pb = progressbar.Default(int64(len(sms)), "Creating Sitemap records")
 		for _, s := range sms {
 			err = db.GormDB.Save(&s).Error
+			pb.Add(1)
 			if err != nil {
 				log.Fatalf("Failed to save sitemap: %v", err)
 			}
@@ -274,8 +292,10 @@ func pullFromBQ(cfg syncConfig) {
 			smwd = append(smwd, swd)
 		}
 		color.Yellow("Creating %d rows", len(smwd))
+		pb = progressbar.Default(int64(len(smwd)), "Creating Sitemap web domain records")
 		for _, s := range smwd {
 			err = db.GormDB.Save(&s).Error
+			pb.Add(1)
 			if err != nil {
 				log.Fatalf("Failed to save sitemap web domain: %v", err)
 			}
@@ -300,8 +320,10 @@ func pullFromBQ(cfg syncConfig) {
 			scds = append(scds, scd)
 		}
 		color.Yellow("Creating %d rows", len(scds))
+		pb = progressbar.Default(int64(len(scds)), "Creating Sitemap contact records")
 		for _, s := range scds {
 			err = db.GormDB.Save(&s).Error
+			pb.Add(1)
 			if err != nil {
 				log.Fatalf("Failed to save sitemap contact domain: %v", err)
 			}

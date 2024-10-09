@@ -11,7 +11,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	db.GormDBConnect("test.db")
+	db.GormDBConnect("test2.db")
 	ClearTables()
 	CreateTables()
 	fmt.Println("HERE")
