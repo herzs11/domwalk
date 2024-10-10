@@ -21,7 +21,7 @@ Data is stored in a local SQLite database and can be pushed to BigQuery.
 domwalk [flags]
 ```
 ### Data Flow
-```mermaid
+:::mermaid
 stateDiagram-v2
     Initialize --> LocalStorage: Create local SQLite database
     LocalStorage --> Backup: Backup local database \n (automatically done before pull)
@@ -31,7 +31,7 @@ stateDiagram-v2
     AddNewDomains --> LocalStorage: Store new data in SQLite database
     EnrichDomains --> BQStorage: Push data to BigQuery
     BQStorage --> Snapshot: Snapshot domains (automatically done before push)
-```
+:::
 
 ### Installation
 
