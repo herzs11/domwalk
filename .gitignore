@@ -11,3 +11,4 @@ go.work
 *.txt
 LICENSE
 domwalk
+docs/domwalk_completion_powershell.md
