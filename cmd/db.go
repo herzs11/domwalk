@@ -111,9 +111,8 @@ func init() {
 		"BQ dataset to sync to",
 	)
 
-	dbCmd.Flags().Bool("push", false, "Push data to BigQuery")
-	dbCmd.Flags().Bool("pull", false, "Pull data from BigQuery")
-	dbCmd.MarkFlagsOneRequired("push", "pull")
+	dbCmd.Flags().Bool("push", false, "Push data to BigQuery (this takes a while)")
+	dbCmd.Flags().Bool("pull", false, "Pull data from BigQuery (this takes a while)")
 	dbCmd.MarkFlagsMutuallyExclusive("push", "pull")
 
 	dbCmd.Flags().Bool("domains", false, "Sync domains")
@@ -123,5 +122,6 @@ func init() {
 	dbCmd.Flags().Bool("sitemaps", false, "Sync sitemaps")
 	dbCmd.Flags().Bool("snapshot", false, "Snapshot domains (automatically done before push)")
 	dbCmd.Flags().Bool("backup", false, "Backup local db (automatically done before pull)")
+	dbCmd.MarkFlagsOneRequired("push", "pull", "snapshot", "backup")
 	rootCmd.AddCommand(dbCmd)
 }

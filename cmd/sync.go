@@ -46,6 +46,10 @@ func backupFile(filePath string) error {
 	// Construct the backup file path.
 	backupFilePath := filepath.Join(dir, fmt.Sprintf("%s_bak%s", fileName, ext))
 
+	// if file does not exist, do not backup
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		color.Yellow("File does not exist, skipping backup...\n")
+	}
 	// Open the original file for reading.
 	src, err := os.Open(filePath)
 	if err != nil {
@@ -71,7 +75,7 @@ func backupFile(filePath string) error {
 
 func pullFromBQ(cfg syncConfig) {
 
-	fmt.Println("Pulling data from BigQuery")
+	fmt.Println("Pulling data from BigQuery (this takes a while)...")
 	types.ClearTables()
 	types.CreateTables()
 	var pb *progressbar.ProgressBar
