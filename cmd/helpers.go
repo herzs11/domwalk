@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"domwalk/db"
-	"domwalk/types"
+	"domwalk/domains"
 	"github.com/fatih/color"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -58,9 +58,9 @@ func readDomainsFromFile(filename string) ([]string, error) {
 }
 
 func enrichDomainNames(domains []string, cfg enrichmentConfig) {
-	doms := []*types.Domain{}
+	doms := []*domains.Domain{}
 	for _, dom := range domains {
-		d, err := types.NewDomain(dom)
+		d, err := domains.NewDomain(dom)
 		if err != nil {
 			color.Yellow("Error parsing domain %s: %s\n", dom, err)
 		}
@@ -72,7 +72,7 @@ func enrichDomainNames(domains []string, cfg enrichmentConfig) {
 func enrichDBDomains(cfg enrichmentConfig) {
 	if cfg.DNS {
 		color.Yellow("Enriching domains with DNS records\n")
-		var domains []*types.Domain
+		var domains []*domains.Domain
 		db.GormDB.Where("last_ran_dns <= ?", cfg.MinFreshnessDate).Find(&domains)
 		enrichDomains(
 			domains, enrichmentConfig{
@@ -86,7 +86,7 @@ func enrichDBDomains(cfg enrichmentConfig) {
 	}
 	if cfg.WebRedirect {
 		color.Yellow("Enriching domains with web redirects\n")
-		var domains []*types.Domain
+		var domains []*domains.Domain
 		db.GormDB.Where("last_ran_web_redirect <= ?", cfg.MinFreshnessDate).Find(&domains)
 		enrichDomains(
 			domains, enrichmentConfig{
@@ -100,7 +100,7 @@ func enrichDBDomains(cfg enrichmentConfig) {
 	}
 	if cfg.CertSans {
 		color.Yellow("Enriching domains with certificate SANs\n")
-		var domains []*types.Domain
+		var domains []*domains.Domain
 		db.GormDB.Where("last_ran_cert_sans <= ?", cfg.MinFreshnessDate).Find(&domains)
 		enrichDomains(
 			domains, enrichmentConfig{
@@ -114,7 +114,7 @@ func enrichDBDomains(cfg enrichmentConfig) {
 	}
 	if cfg.SitemapWeb {
 		color.Yellow("Enriching domains with web domains from sitemaps\n")
-		var domains []*types.Domain
+		var domains []*domains.Domain
 		db.GormDB.Where("last_ran_sitemap_parse <= ?", cfg.MinFreshnessDate).Find(&domains)
 		enrichDomains(
 			domains, enrichmentConfig{
@@ -128,14 +128,14 @@ func enrichDBDomains(cfg enrichmentConfig) {
 	}
 }
 
-func enrichDomains(domains []*types.Domain, cfg enrichmentConfig) {
+func enrichDomains(domains []*domains.Domain, cfg enrichmentConfig) {
 	if cfg.Offset+cfg.Limit > len(domains) {
 		cfg.Limit = len(domains) - cfg.Offset
 	}
 	domains = domains[cfg.Offset : cfg.Offset+cfg.Limit]
 	N_TO_PROCESS = len(domains)
 	NUM_PROCESSED = 0
-	jobs := make(chan *types.Domain, len(domains))
+	jobs := make(chan *domains.Domain, len(domains))
 	var wg sync.WaitGroup
 	wg.Add(cfg.NWorkers)
 	for w := 1; w <= cfg.NWorkers; w++ {
@@ -148,10 +148,10 @@ func enrichDomains(domains []*types.Domain, cfg enrichmentConfig) {
 	wg.Wait()
 }
 
-func enrichDomainWorker(id int, jobs <-chan *types.Domain, wg *sync.WaitGroup, cfg enrichmentConfig) {
+func enrichDomainWorker(id int, jobs <-chan *domains.Domain, wg *sync.WaitGroup, cfg enrichmentConfig) {
 	defer wg.Done()
 	for domain := range jobs {
-		var d = types.Domain{}
+		var d = domains.Domain{}
 		if err := db.GormDB.Preload(clause.Associations).Where(
 			"domain_name = ?", domain.DomainName,
 		).First(&d).Error; errors.Is(

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"domwalk/db"
-	"domwalk/types"
+	"domwalk/domains"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -41,14 +41,14 @@ var rootCmd = &cobra.Command{
 			cmd.Println("GORM SQLite database name is required (use --gorm-db or set $GORM_SQLITE_NAME)")
 			os.Exit(1)
 		}
-		err := db.GormDBConnect(gormDBName)
+		err := db.GormDBConnectSQLite(gormDBName)
 		if err != nil {
 			color.Set(color.FgRed)
 			cmd.Println(err)
 			color.Unset()
 			os.Exit(1)
 		}
-		types.CreateTables()
+		domains.CreateTables()
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
 		domainsToExecute, _ = cmd.Flags().GetStringSlice("domains")

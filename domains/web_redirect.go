@@ -1,4 +1,4 @@
-package types
+package domains
 
 import (
 	"fmt"

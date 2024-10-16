@@ -13,7 +13,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"domwalk/db"
-	"domwalk/types"
+	"domwalk/domains"
 	"github.com/fatih/color"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/oauth2/google"
@@ -73,11 +73,11 @@ func backupFile(filePath string) error {
 func pullFromBQ(cfg syncConfig) {
 
 	fmt.Println("Pulling data from BigQuery (this takes a while)...")
-	types.ClearTables()
-	types.CreateTables()
+	domains.ClearTables()
+	domains.CreateTables()
 	var pb *progressbar.ProgressBar
 	if cfg.Domains {
-		doms := []types.Domain{}
+		doms := []domains.Domain{}
 		color.Green("Pulling domains")
 		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.domains ORDER BY domain_name", cfg.Dataset))
 		rows, err := q.Read(context.Background())
@@ -85,7 +85,7 @@ func pullFromBQ(cfg syncConfig) {
 			log.Fatalf("Failed to read rows: %v", err)
 		}
 		for {
-			var d types.DomainBQ
+			var d domains.DomainBQ
 			err := rows.Next(&d)
 			if err == iterator.Done {
 				break
@@ -108,7 +108,7 @@ func pullFromBQ(cfg syncConfig) {
 		}
 	}
 	if cfg.CertSansDomains {
-		csans := []types.CertSansDomain{}
+		csans := []domains.CertSansDomain{}
 		color.Green("Pulling cert sans domains")
 		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.cert_sans_domains ORDER BY id", cfg.Dataset))
 		rows, err := q.Read(context.Background())
@@ -116,7 +116,7 @@ func pullFromBQ(cfg syncConfig) {
 			log.Fatalf("Failed to read rows: %v", err)
 		}
 		for {
-			var d types.MatchedDomainBQ
+			var d domains.MatchedDomainBQ
 			err := rows.Next(&d)
 			if err == iterator.Done {
 				break
@@ -124,7 +124,7 @@ func pullFromBQ(cfg syncConfig) {
 			if err != nil {
 				log.Fatalf("Failed to read row: %v", err)
 			}
-			csan := types.CertSansDomain{MatchedDomain: d.ToGorm()}
+			csan := domains.CertSansDomain{MatchedDomain: d.ToGorm()}
 			csans = append(csans, csan)
 		}
 		color.Yellow("Creating %d rows", len(csans))
@@ -138,7 +138,7 @@ func pullFromBQ(cfg syncConfig) {
 		}
 	}
 	if cfg.DNS {
-		mxs := []types.MXRecord{}
+		mxs := []domains.MXRecord{}
 		color.Green("Pulling DNS records")
 		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.mx_records ORDER BY id", cfg.Dataset))
 		rows, err := q.Read(context.Background())
@@ -146,7 +146,7 @@ func pullFromBQ(cfg syncConfig) {
 			log.Fatalf("Failed to read rows: %v", err)
 		}
 		for {
-			var d types.MXRecordBQ
+			var d domains.MXRecordBQ
 			err := rows.Next(&d)
 			if err == iterator.Done {
 				break
@@ -167,14 +167,14 @@ func pullFromBQ(cfg syncConfig) {
 			}
 		}
 
-		ars := []types.ARecord{}
+		ars := []domains.ARecord{}
 		q = db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.a_records ORDER BY id", cfg.Dataset))
 		rows, err = q.Read(context.Background())
 		if err != nil {
 			log.Fatalf("Failed to read rows: %v", err)
 		}
 		for {
-			var d types.ARecordBQ
+			var d domains.ARecordBQ
 			err := rows.Next(&d)
 			if err == iterator.Done {
 				break
@@ -195,14 +195,14 @@ func pullFromBQ(cfg syncConfig) {
 			}
 		}
 
-		aars := []types.AAAARecord{}
+		aars := []domains.AAAARecord{}
 		q = db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.aaaa_records ORDER BY id", cfg.Dataset))
 		rows, err = q.Read(context.Background())
 		if err != nil {
 			log.Fatalf("Failed to read rows: %v", err)
 		}
 		for {
-			var d types.AAAARecordBQ
+			var d domains.AAAARecordBQ
 			err := rows.Next(&d)
 			if err == iterator.Done {
 				break
@@ -223,14 +223,14 @@ func pullFromBQ(cfg syncConfig) {
 			}
 		}
 
-		soas := []types.SOARecord{}
+		soas := []domains.SOARecord{}
 		q = db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.soa_records ORDER BY id", cfg.Dataset))
 		rows, err = q.Read(context.Background())
 		if err != nil {
 			log.Fatalf("Failed to read rows: %v", err)
 		}
 		for {
-			var d types.SOARecordBQ
+			var d domains.SOARecordBQ
 			err := rows.Next(&d)
 			if err == iterator.Done {
 				break
@@ -253,7 +253,7 @@ func pullFromBQ(cfg syncConfig) {
 	}
 
 	if cfg.WebRedirectDomains {
-		wred := []types.WebRedirectDomain{}
+		wred := []domains.WebRedirectDomain{}
 		color.Green("Pulling web redirect domains")
 		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.web_redirect_domains ORDER BY id", cfg.Dataset))
 		rows, err := q.Read(context.Background())
@@ -261,7 +261,7 @@ func pullFromBQ(cfg syncConfig) {
 			log.Fatalf("Failed to read rows: %v", err)
 		}
 		for {
-			var d types.MatchedDomainBQ
+			var d domains.MatchedDomainBQ
 			err := rows.Next(&d)
 			if err == iterator.Done {
 				break
@@ -269,7 +269,7 @@ func pullFromBQ(cfg syncConfig) {
 			if err != nil {
 				log.Fatalf("Failed to read row: %v", err)
 			}
-			wr := types.WebRedirectDomain{MatchedDomain: d.ToGorm()}
+			wr := domains.WebRedirectDomain{MatchedDomain: d.ToGorm()}
 			wred = append(wred, wr)
 		}
 		color.Yellow("Creating %d rows", len(wred))
@@ -283,7 +283,7 @@ func pullFromBQ(cfg syncConfig) {
 		}
 	}
 	if cfg.Sitemaps {
-		sms := []types.Sitemap{}
+		sms := []domains.Sitemap{}
 		color.Green("Pulling sitemaps")
 		q := db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.sitemaps ORDER BY id", cfg.Dataset))
 		rows, err := q.Read(context.Background())
@@ -291,7 +291,7 @@ func pullFromBQ(cfg syncConfig) {
 			log.Fatalf("Failed to read rows: %v", err)
 		}
 		for {
-			var d types.SitemapBQ
+			var d domains.SitemapBQ
 			err := rows.Next(&d)
 			if err == iterator.Done {
 				break
@@ -312,14 +312,14 @@ func pullFromBQ(cfg syncConfig) {
 			}
 		}
 
-		smwd := []types.SitemapWebDomain{}
+		smwd := []domains.SitemapWebDomain{}
 		q = db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.sitemap_web_domains ORDER BY id", cfg.Dataset))
 		rows, err = q.Read(context.Background())
 		if err != nil {
 			log.Fatalf("Failed to read rows: %v", err)
 		}
 		for {
-			var d types.MatchedDomainBQ
+			var d domains.MatchedDomainBQ
 			err := rows.Next(&d)
 			if err == iterator.Done {
 				break
@@ -327,7 +327,7 @@ func pullFromBQ(cfg syncConfig) {
 			if err != nil {
 				log.Fatalf("Failed to read row: %v", err)
 			}
-			swd := types.SitemapWebDomain{MatchedDomain: d.ToGorm()}
+			swd := domains.SitemapWebDomain{MatchedDomain: d.ToGorm()}
 			smwd = append(smwd, swd)
 		}
 		color.Yellow("Creating %d rows", len(smwd))
@@ -340,14 +340,14 @@ func pullFromBQ(cfg syncConfig) {
 			}
 		}
 
-		scds := []types.SitemapContactDomain{}
+		scds := []domains.SitemapContactDomain{}
 		q = db.BQConn.Query(fmt.Sprintf("SELECT * FROM %s.sitemap_contact_domains ORDER BY id", cfg.Dataset))
 		rows, err = q.Read(context.Background())
 		if err != nil {
 			log.Fatalf("Failed to read rows: %v", err)
 		}
 		for {
-			var d types.MatchedDomainBQ
+			var d domains.MatchedDomainBQ
 			err := rows.Next(&d)
 			if err == iterator.Done {
 				break
@@ -355,7 +355,7 @@ func pullFromBQ(cfg syncConfig) {
 			if err != nil {
 				log.Fatalf("Failed to read row: %v", err)
 			}
-			scd := types.SitemapContactDomain{MatchedDomain: d.ToGorm()}
+			scd := domains.SitemapContactDomain{MatchedDomain: d.ToGorm()}
 			scds = append(scds, scd)
 		}
 		color.Yellow("Creating %d rows", len(scds))
@@ -381,13 +381,13 @@ func pushToBQ(cfg syncConfig) {
 
 	if cfg.Domains {
 		tableName = "domains"
-		if err := recreateTable(types.DomainBQ{}, tableName); err != nil {
+		if err := recreateTable(domains.DomainBQ{}, tableName); err != nil {
 			log.Printf("Failed to truncate table: %v", err)
 		}
 		offset = 0
 		limit = 1000
 		for {
-			chunk := []types.Domain{}
+			chunk := []domains.Domain{}
 			err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 			if err != nil {
 				log.Fatalf("Failed to get chunk: %v", err)
@@ -395,7 +395,7 @@ func pushToBQ(cfg syncConfig) {
 			if len(chunk) == 0 {
 				break
 			}
-			bqds := make([]types.DomainBQ, len(chunk))
+			bqds := make([]domains.DomainBQ, len(chunk))
 			for i, m := range chunk {
 				bqds[i] = m.ToBQ()
 			}
@@ -407,12 +407,12 @@ func pushToBQ(cfg syncConfig) {
 		offset = 0
 		limit = 5000
 		tableName = "cert_sans_domains"
-		if err := recreateTable(types.MatchedDomainBQ{}, tableName); err != nil {
+		if err := recreateTable(domains.MatchedDomainBQ{}, tableName); err != nil {
 			log.Printf("Failed to truncate table: %v", err)
 		}
 		for {
-			chunk := []types.CertSansDomain{}
-			bqr := []types.MatchedDomainBQ{}
+			chunk := []domains.CertSansDomain{}
+			bqr := []domains.MatchedDomainBQ{}
 			err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 			if err != nil {
 				log.Fatalf("Failed to get chunk: %v", err)
@@ -431,12 +431,12 @@ func pushToBQ(cfg syncConfig) {
 		tableName = "mx_records"
 		offset = 0
 		limit = 5000
-		if err := recreateTable(types.MXRecordBQ{}, tableName); err != nil {
+		if err := recreateTable(domains.MXRecordBQ{}, tableName); err != nil {
 			log.Printf("Failed to truncate table: %v", err)
 		}
 		for {
-			bqr := []types.MXRecordBQ{}
-			chunk := []types.MXRecord{}
+			bqr := []domains.MXRecordBQ{}
+			chunk := []domains.MXRecord{}
 			err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 			if err != nil {
 				log.Fatalf("Failed to get chunk: %v", err)
@@ -454,12 +454,12 @@ func pushToBQ(cfg syncConfig) {
 		tableName = "a_records"
 		offset = 0
 		limit = 5000
-		if err := recreateTable(types.ARecordBQ{}, tableName); err != nil {
+		if err := recreateTable(domains.ARecordBQ{}, tableName); err != nil {
 			log.Printf("Failed to truncate table: %v", err)
 		}
 		for {
-			bqr := []types.ARecordBQ{}
-			chunk := []types.ARecord{}
+			bqr := []domains.ARecordBQ{}
+			chunk := []domains.ARecord{}
 			err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 			if err != nil {
 				log.Fatalf("Failed to get chunk: %v", err)
@@ -478,12 +478,12 @@ func pushToBQ(cfg syncConfig) {
 		tableName = "aaaa_records"
 		offset = 0
 		limit = 1000
-		if err := recreateTable(types.AAAARecordBQ{}, tableName); err != nil {
+		if err := recreateTable(domains.AAAARecordBQ{}, tableName); err != nil {
 			log.Fatalf("Failed to truncate table: %v", err)
 		}
 		for {
-			bqr := []types.AAAARecordBQ{}
-			chunk := []types.AAAARecord{}
+			bqr := []domains.AAAARecordBQ{}
+			chunk := []domains.AAAARecord{}
 			err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 			if err != nil {
 				log.Fatalf("Failed to get chunk: %v", err)
@@ -501,12 +501,12 @@ func pushToBQ(cfg syncConfig) {
 		tableName = "soa_records"
 		offset = 0
 		limit = 1000
-		if err := recreateTable(types.SOARecordBQ{}, tableName); err != nil {
+		if err := recreateTable(domains.SOARecordBQ{}, tableName); err != nil {
 			log.Fatalf("Failed to truncate table: %v", err)
 		}
 		for {
-			bqr := []types.SOARecordBQ{}
-			chunk := []types.SOARecord{}
+			bqr := []domains.SOARecordBQ{}
+			chunk := []domains.SOARecord{}
 			err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 			if err != nil {
 				log.Fatalf("Failed to get chunk: %v", err)
@@ -526,12 +526,12 @@ func pushToBQ(cfg syncConfig) {
 		tableName = "web_redirect_domains"
 		offset = 0
 		limit = 1000
-		if err := recreateTable(types.MatchedDomainBQ{}, tableName); err != nil {
+		if err := recreateTable(domains.MatchedDomainBQ{}, tableName); err != nil {
 			log.Printf("Failed to truncate table: %v", err)
 		}
 		for {
-			chunk := []types.WebRedirectDomain{}
-			bqr := []types.MatchedDomainBQ{}
+			chunk := []domains.WebRedirectDomain{}
+			bqr := []domains.MatchedDomainBQ{}
 			err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 			if err != nil {
 				log.Fatalf("Failed to get chunk: %v", err)
@@ -551,12 +551,12 @@ func pushToBQ(cfg syncConfig) {
 		tableName = "sitemaps"
 		offset = 0
 		limit = 1000
-		if err := recreateTable(types.SitemapBQ{}, tableName); err != nil {
+		if err := recreateTable(domains.SitemapBQ{}, tableName); err != nil {
 			log.Fatalf("Failed to truncate table: %v", err)
 		}
 		for {
-			chunk := []types.Sitemap{}
-			bqr := []types.SitemapBQ{}
+			chunk := []domains.Sitemap{}
+			bqr := []domains.SitemapBQ{}
 			err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 			if err != nil {
 				log.Fatalf("Failed to get chunk: %v", err)
@@ -574,12 +574,12 @@ func pushToBQ(cfg syncConfig) {
 		tableName = "sitemap_web_domains"
 		offset = 0
 		limit = 5000
-		if err := recreateTable(types.MatchedDomainBQ{}, tableName); err != nil {
+		if err := recreateTable(domains.MatchedDomainBQ{}, tableName); err != nil {
 			log.Fatalf("Failed to truncate table: %v", err)
 		}
 		for {
-			chunk := []types.SitemapWebDomain{}
-			bqr := []types.MatchedDomainBQ{}
+			chunk := []domains.SitemapWebDomain{}
+			bqr := []domains.MatchedDomainBQ{}
 			err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 			if err != nil {
 				log.Fatalf("Failed to get chunk: %v", err)
@@ -598,12 +598,12 @@ func pushToBQ(cfg syncConfig) {
 		tableName = "sitemap_contact_domains"
 		offset = 0
 		limit = 5000
-		if err := recreateTable(types.MatchedDomainBQ{}, tableName); err != nil {
+		if err := recreateTable(domains.MatchedDomainBQ{}, tableName); err != nil {
 			log.Fatalf("Failed to truncate table: %v", err)
 		}
 		for {
-			chunk := []types.SitemapContactDomain{}
-			bqr := []types.MatchedDomainBQ{}
+			chunk := []domains.SitemapContactDomain{}
+			bqr := []domains.MatchedDomainBQ{}
 			err := db.GormDB.Limit(limit).Offset(offset).Find(&chunk).Error
 			if err != nil {
 				log.Fatalf("Failed to get chunk: %v", err)
