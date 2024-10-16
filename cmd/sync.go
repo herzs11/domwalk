@@ -38,11 +38,8 @@ type syncConfig struct {
 func backupFile(filePath string) error {
 	// Get the directory, filename, and extension of the original file.
 	dir, file := filepath.Split(filePath)
-	fileName, ext, found := strings.Cut(file, ".")
-	if !found {
-		return fmt.Errorf("failed to split file name and extension: %s", file)
-	}
-
+	ext := filepath.Ext(file)
+	fileName := strings.TrimSuffix(filepath.Base(file), ext)
 	// Construct the backup file path.
 	backupFilePath := filepath.Join(dir, fmt.Sprintf("%s_bak%s", fileName, ext))
 
