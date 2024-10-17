@@ -81,7 +81,63 @@ func (d *Domain) parseDomain() error {
 
 func NewDomain(domain_name string) (*Domain, error) {
 	dn := strings.TrimSpace(domain_name)
-	d := &Domain{DomainName: dn}
+	now := time.Now()
+	d := &Domain{DomainName: dn, CreatedAt: now, UpdatedAt: now}
 	err := d.parseDomain()
 	return d, err
+}
+
+type EnrichmentConfig struct {
+	CertSans         bool      `json:"cert_sans"`
+	DNS              bool      `json:"dns"`
+	Sitemap          bool      `json:"sitemap"`
+	WebRedirect      bool      `json:"web_redirect"`
+	MinFreshnessDate time.Time `json:"min_freshness_date"`
+}
+
+func NewEnrichmentConfig(
+	certSans bool, DNS bool, sitemap bool, webRedirect bool, minFreshnessDate time.Time,
+) *EnrichmentConfig {
+	return &EnrichmentConfig{
+		CertSans: certSans, DNS: DNS, Sitemap: sitemap, WebRedirect: webRedirect, MinFreshnessDate: minFreshnessDate,
+	}
+}
+
+func (d *Domain) Enrich(cfg EnrichmentConfig) {
+	if d.LastRanDns.Unix() <= cfg.MinFreshnessDate.Unix() && cfg.DNS {
+		d.GetDNSRecords()
+	}
+	if d.LastRanWebRedirect.Unix() <= cfg.MinFreshnessDate.Unix() && cfg.WebRedirect {
+		d.GetRedirectDomains()
+	}
+	if d.LastRanCertSans.Unix() <= cfg.MinFreshnessDate.Unix() && cfg.CertSans {
+		d.GetCertSANs()
+	}
+	if d.LastRanSitemapParse.Unix() <= cfg.MinFreshnessDate.Unix() && cfg.Sitemap {
+		d.GetDomainsFromSitemap()
+	}
+}
+
+type MatchedDomainsByStrategy struct {
+	WebRedirectDomains    []string `json:"webRedirectDomains"`
+	CertSANs              []string `json:"certSANs"`
+	SitemapWebDomains     []string `json:"sitemapWebDomains"`
+	SitemapContactDomains []string `json:"sitemapContactDomains"`
+}
+
+func (d *Domain) GetAllMatchedDomains() MatchedDomainsByStrategy {
+	var allDomains = MatchedDomainsByStrategy{}
+	for _, w := range d.WebRedirectDomains {
+		allDomains.WebRedirectDomains = append(allDomains.WebRedirectDomains, w.DomainName)
+	}
+	for _, c := range d.CertSANs {
+		allDomains.CertSANs = append(allDomains.CertSANs, c.DomainName)
+	}
+	for _, s := range d.SitemapWebDomains {
+		allDomains.SitemapWebDomains = append(allDomains.SitemapWebDomains, s.DomainName)
+	}
+	for _, c := range d.SitemapContactDomains {
+		allDomains.SitemapContactDomains = append(allDomains.SitemapContactDomains, c.DomainName)
+	}
+	return allDomains
 }

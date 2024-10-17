@@ -75,7 +75,6 @@ func (d *Domain) GetCertSANs() error {
 	for _, df := range d.CertSANs {
 		domsFound[df.DomainName] = df
 	}
-	var cs []CertSansDomain
 	for _, san := range cert.DNSNames {
 		dm, err := NewDomain(san)
 		if err != nil {
@@ -85,15 +84,17 @@ func (d *Domain) GetCertSANs() error {
 		if dm.DomainName == dom {
 			continue
 		}
-		if _, exists := domsFound[dm.DomainName]; !exists {
-			certSAN := CertSansDomain{MatchedDomain{DomainName: dm.DomainName}}
+		if c, exists := domsFound[dm.DomainName]; !exists {
+			certSAN := CertSansDomain{MatchedDomain{CreatedAt: now, UpdatedAt: now, DomainName: dm.DomainName}}
 			domsFound[dm.DomainName] = certSAN
-			cs = append(cs, certSAN)
 		} else {
-			certSAN := domsFound[dm.DomainName]
-			certSAN.UpdatedAt = now
-			cs = append(cs, certSAN)
+			c.UpdatedAt = now
+			domsFound[dm.DomainName] = c
 		}
+	}
+	var cs []CertSansDomain
+	for _, c := range domsFound {
+		cs = append(cs, c)
 	}
 	d.CertSANs = cs
 	return nil
