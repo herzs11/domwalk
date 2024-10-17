@@ -41,6 +41,10 @@ func handleDomainEnrichment(bqs *bq.BQStore) http.HandlerFunc {
 		}
 		enrichDomains(doms, rParams.ProcessConfig)
 		go bqs.PutDomains(context.Background(), doms)
+		if rParams.NoResponse {
+			writeJSON(w, http.StatusOK, map[string]string{"message": "Enriched domains"})
+			return
+		}
 		if rParams.OnlyMatchedDomains {
 			matchedDoms := make(map[string]domains.MatchedDomainsByStrategy)
 			for _, dom := range doms {
