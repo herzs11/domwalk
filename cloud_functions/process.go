@@ -1,17 +1,13 @@
-package main
+package cloud_functions
 
 import (
 	"sync"
 
+	"domwalk/cloud_functions/types"
 	"domwalk/domains"
 )
 
-type processConfig struct {
-	Workers int `json:"workers,omitempty"`
-	domains.EnrichmentConfig
-}
-
-func enrichDomains(doms []*domains.Domain, cfg processConfig) {
+func enrichDomains(doms []*domains.Domain, cfg types.ProcessConfig) {
 	jobs := make(chan *domains.Domain, len(doms))
 	var wg sync.WaitGroup
 	wg.Add(cfg.Workers)
@@ -30,5 +26,4 @@ func enrichDomainWorker(id int, jobs <-chan *domains.Domain, wg *sync.WaitGroup,
 	for domain := range jobs {
 		domain.Enrich(cfg)
 	}
-
 }

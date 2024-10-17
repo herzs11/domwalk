@@ -1,4 +1,4 @@
-package main
+package cloud_functions
 
 import (
 	"context"
@@ -7,35 +7,23 @@ import (
 	"log"
 	"net/http"
 
+	"domwalk/cloud_functions/types"
 	"domwalk/domains"
 	"domwalk/stores/bq"
-	"github.com/GoogleCloudPlatform/functions-framework-go/funcframework"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
-type requestParams struct {
-	DomainNames []string `json:"domain_names"`
-	processConfig
-	OnlyMatchedDomains bool `json:"only_matched_domains,omitempty"`
-}
-
 func init() {
-	bqs, err := bq.NewBQStore("unum-marketing-data-assets", "domwalk_dev", "domains_test")
+	bqs, err := bq.NewBQStore("unum-marketing-data-assets", "domwalk", "domains")
 	if err != nil {
 		log.Fatal(err)
 	}
 	functions.HTTP("handleDomainEnrichment", handleDomainEnrichment(bqs))
 }
 
-func main() {
-	if err := funcframework.Start("8080"); err != nil {
-		log.Fatalf("funcframework.Start: %v\n", err)
-	}
-}
-
 func handleDomainEnrichment(bqs *bq.BQStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var rParams requestParams
+		var rParams types.RequestParams
 		err := json.NewDecoder(r.Body).Decode(&rParams)
 		if err != nil {
 			writeJSON(
@@ -51,7 +39,7 @@ func handleDomainEnrichment(bqs *bq.BQStore) http.HandlerFunc {
 			)
 			return
 		}
-		enrichDomains(doms, rParams.processConfig)
+		enrichDomains(doms, rParams.ProcessConfig)
 		go bqs.PutDomains(context.Background(), doms)
 		if rParams.OnlyMatchedDomains {
 			matchedDoms := make(map[string]domains.MatchedDomainsByStrategy)
