@@ -4,43 +4,12 @@ import (
 	"time"
 
 	"domwalk/db"
-	"gorm.io/gorm"
 )
 
 type MatchedDomain struct {
-	gorm.Model
-	DomainName        string `json:"reqDomainName,omitempty" bigquery:"domain_name" gorm:"index:,unique,composite:dom_match"`
-	MatchedDomainName string `json:"certSanDomainName,omitempty" bigquery:"matched_domain_name" gorm:"index:,unique,composite:dom_match"`
-	Domain            Domain `json:"-" gorm:"foreignKey:MatchedDomainName" bigquery:"-"`
-}
-
-func (m *MatchedDomain) ToBQ() MatchedDomainBQ {
-	return MatchedDomainBQ{
-		ID:                int(m.ID),
-		CreatedAt:         m.CreatedAt,
-		UpdatedAt:         m.UpdatedAt,
-		DomainName:        m.DomainName,
-		MatchedDomainName: m.MatchedDomainName,
-	}
-}
-
-type MatchedDomainBQ struct {
-	ID                int       `bigquery:"id"`
-	CreatedAt         time.Time `bigquery:"created_at"`
-	UpdatedAt         time.Time `bigquery:"updated_at"`
-	DomainName        string    `bigquery:"domain_name"`
-	MatchedDomainName string    `bigquery:"matched_domain_name"`
-}
-
-func (m *MatchedDomainBQ) ToGorm() MatchedDomain {
-	return MatchedDomain{
-		Model: gorm.Model{
-			CreatedAt: m.CreatedAt,
-			UpdatedAt: m.UpdatedAt,
-		},
-		DomainName:        m.DomainName,
-		MatchedDomainName: m.MatchedDomainName,
-	}
+	CreatedAt  time.Time `json:"createdAt,omitempty"`
+	UpdatedAt  time.Time `json:"updatedAt,omitempty"`
+	DomainName string    `json:"matchedDomain,omitempty"`
 }
 
 func ClearTables() {

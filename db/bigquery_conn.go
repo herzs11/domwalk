@@ -18,7 +18,7 @@ func CreateBigQueryConn() error {
 	client, err := bigquery.NewClient(ctx, bigquery.DetectProjectID)
 	fmt.Println(client.Project())
 	if err != nil {
-		log.Fatalf("bigquery.NewClient: %v", err)
+		log.Fatalf("bq.NewClient: %v", err)
 		return err
 	}
 

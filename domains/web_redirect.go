@@ -64,12 +64,14 @@ func (d *Domain) GetRedirectDomains() error {
 		d.SuccessfulWebLanding = true
 		return nil
 	}
+	now := time.Now()
 	for host := range hosts {
 		rdom, err := NewDomain(host)
 		if err != nil {
 			log.Println(err)
+			continue
 		}
-		wr := WebRedirectDomain{MatchedDomain{DomainName: d.DomainName, Domain: *rdom}}
+		wr := WebRedirectDomain{MatchedDomain{CreatedAt: now, UpdatedAt: now, DomainName: rdom.DomainName}}
 		d.WebRedirectDomains = append(d.WebRedirectDomains, wr)
 	}
 	return nil

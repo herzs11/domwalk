@@ -35,7 +35,7 @@ var dbCmd = &cobra.Command{
 		err = db.CreateBigQueryConn()
 		if err != nil {
 			color.Set(color.FgRed)
-			cmd.Println("Error getting bigquery client: ", err)
+			cmd.Println("Error getting bq client: ", err)
 			color.Unset()
 			os.Exit(1)
 		}

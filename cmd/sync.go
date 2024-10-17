@@ -303,7 +303,7 @@ func pullFromBQ(cfg syncConfig) {
 			sms = append(sms, s)
 		}
 		color.Yellow("Creating %d rows", len(sms))
-		pb = progressbar.Default(int64(len(sms)), "Creating Sitemap records")
+		pb = progressbar.Default(int64(len(sms)), "Creating SitemapLoc records")
 		for _, s := range sms {
 			err = db.GormDB.Save(&s).Error
 			pb.Add(1)
@@ -331,7 +331,7 @@ func pullFromBQ(cfg syncConfig) {
 			smwd = append(smwd, swd)
 		}
 		color.Yellow("Creating %d rows", len(smwd))
-		pb = progressbar.Default(int64(len(smwd)), "Creating Sitemap web domain records")
+		pb = progressbar.Default(int64(len(smwd)), "Creating SitemapLoc web domain records")
 		for _, s := range smwd {
 			err = db.GormDB.Save(&s).Error
 			pb.Add(1)
@@ -359,7 +359,7 @@ func pullFromBQ(cfg syncConfig) {
 			scds = append(scds, scd)
 		}
 		color.Yellow("Creating %d rows", len(scds))
-		pb = progressbar.Default(int64(len(scds)), "Creating Sitemap contact records")
+		pb = progressbar.Default(int64(len(scds)), "Creating SitemapLoc contact records")
 		for _, s := range scds {
 			err = db.GormDB.Save(&s).Error
 			pb.Add(1)

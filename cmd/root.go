@@ -29,8 +29,8 @@ var rootCmd = &cobra.Command{
 	Currently, the tool can enrich domains with the following relationships:
 	- Certificate Subject Alternative Names (SANs)
 	- Web Redirects
-	- Sitemap Web Domains
-	- Sitemap Contact Page Domains
+	- SitemapLoc Web Domains
+	- SitemapLoc Contact Page Domains
 
 	The tool can also enrich domains with DNS data. In a future version, this dns data will be used to form additional domain relationships
 	`,

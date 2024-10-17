@@ -158,7 +158,7 @@ func enrichDomainWorker(id int, jobs <-chan *domains.Domain, wg *sync.WaitGroup,
 			err, gorm.ErrRecordNotFound,
 		) {
 			d = *domain
-			color.Yellow("Domain %s not found in database, creating\n", d.DomainName)
+			color.Yellow("DomainName %s not found in database, creating\n", d.DomainName)
 		}
 		if d.LastRanDns.Unix() <= cfg.MinFreshnessDate.Unix() && cfg.DNS {
 			d.GetDNSRecords()

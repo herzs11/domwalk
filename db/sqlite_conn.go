@@ -38,7 +38,7 @@ func GormDBConnectSQLite(db_name string) error {
 }
 
 func GormDBConnectBQ(project_id, dataset_name string) error {
-	dsn := fmt.Sprintf("bigquery://%s/%s", project_id, dataset_name)
+	dsn := fmt.Sprintf("bq://%s/%s", project_id, dataset_name)
 	Mut = &sync.Mutex{}
 	gdb, err := gorm.Open(
 		bigquery.Open(dsn), &gorm.Config{
