@@ -1,4 +1,4 @@
-package types
+package domains
 
 import (
 	"crypto/tls"
@@ -70,20 +70,31 @@ func (d *Domain) GetCertSANs() error {
 		return fmt.Errorf("failed to cast connection to tls.Conn")
 	}
 	cert := tlsConn.ConnectionState().PeerCertificates[0]
-	domsFound := make(map[string]bool)
+	now := time.Now()
+	domsFound := make(map[string]CertSansDomain)
+	for _, df := range d.CertSANs {
+		domsFound[df.DomainName] = df
+	}
+	var cs []CertSansDomain
 	for _, san := range cert.DNSNames {
 		dm, err := NewDomain(san)
 		if err != nil {
 			log.Println("Error parsing domain: ", err)
+			continue
 		}
 		if dm.DomainName == dom {
 			continue
 		}
 		if _, exists := domsFound[dm.DomainName]; !exists {
-			domsFound[dm.DomainName] = true
-			certSAN := CertSansDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dm}}
-			d.CertSANs = append(d.CertSANs, certSAN)
+			certSAN := CertSansDomain{MatchedDomain{DomainName: dm.DomainName}}
+			domsFound[dm.DomainName] = certSAN
+			cs = append(cs, certSAN)
+		} else {
+			certSAN := domsFound[dm.DomainName]
+			certSAN.UpdatedAt = now
+			cs = append(cs, certSAN)
 		}
 	}
+	d.CertSANs = cs
 	return nil
 }

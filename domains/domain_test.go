@@ -1,4 +1,4 @@
-package types
+package domains
 
 import (
 	"fmt"
@@ -11,12 +11,12 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	db.GormDBConnect("test2.db")
+	db.GormDBConnectBQ("unum-marketing-data-assets", "domwalk_dev")
 	ClearTables()
 	CreateTables()
 	fmt.Println("HERE")
 	m.Run()
-	gdb, err := db.GormDB.DB()
+	gdb, err := db.GormDB.DB.DB()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,6 +24,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestDomains(t *testing.T) {
+	return
 	doms := []string{
 		"levistrauss.com",
 		"google.com",

@@ -1,4 +1,4 @@
-package types
+package domains
 
 import (
 	"encoding/xml"
@@ -14,7 +14,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/temoto/robotstxt"
-	"gorm.io/gorm"
 )
 
 type URL struct {
@@ -30,38 +29,9 @@ type SitemapIndex struct {
 }
 
 type Sitemap struct {
-	gorm.Model
-	DomainName string `json:"domainName,omitempty" bigquery:"domain_name"`
-	Sitemap    string `json:"sitemap,omitempty" bigquery:"sitemap"`
-}
-
-type SitemapBQ struct {
-	ID         int       `bigquery:"id"`
-	CreatedAt  time.Time `bigquery:"created_at"`
-	UpdatedAt  time.Time `bigquery:"updated_at"`
-	DomainName string    `bigquery:"domain_name"`
-	Sitemap    string    `bigquery:"sitemap"`
-}
-
-func (s *Sitemap) ToBQ() SitemapBQ {
-	return SitemapBQ{
-		ID:         int(s.ID),
-		CreatedAt:  s.CreatedAt,
-		UpdatedAt:  s.UpdatedAt,
-		DomainName: s.DomainName,
-		Sitemap:    s.Sitemap,
-	}
-}
-
-func (s *SitemapBQ) ToGorm() Sitemap {
-	return Sitemap{
-		Model: gorm.Model{
-			CreatedAt: s.CreatedAt,
-			UpdatedAt: s.UpdatedAt,
-		},
-		DomainName: s.DomainName,
-		Sitemap:    s.Sitemap,
-	}
+	CreatedAt  time.Time `json:"createdAt,omitempty"`
+	UpdatedAt  time.Time `json:"updatedAt,omitempty"`
+	SitemapLoc string    `json:"sitemapLoc,omitempty"`
 }
 
 type SitemapContactDomain struct {
@@ -74,7 +44,7 @@ type SitemapWebDomain struct {
 
 func (d *Domain) GetDomainsFromSitemap() error {
 	if !d.SuccessfulWebLanding {
-		return fmt.Errorf("Domain has not successfully landed on the web")
+		return fmt.Errorf("DomainName has not successfully landed on the web")
 	}
 	d.LastRanSitemapParse = time.Now()
 	err := d.getRobotstxt()
@@ -114,7 +84,7 @@ func (d *Domain) getRobotstxt() error {
 		robots.Sitemaps = robots.Sitemaps[:11]
 	}
 	for _, sitemap := range robots.Sitemaps {
-		d.Sitemaps = append(d.Sitemaps, &Sitemap{DomainName: d.DomainName, Sitemap: sitemap})
+		d.Sitemaps = append(d.Sitemaps, &Sitemap{SitemapLoc: sitemap})
 	}
 
 	return nil
@@ -143,7 +113,7 @@ func (s *Sitemap) readSitemap() (URLSet, []*Sitemap, error) {
 		Transport: transport,
 		Timeout:   10 * time.Second, // Overall timeout for the request
 	}
-	resp, err := client.Get(s.Sitemap)
+	resp, err := client.Get(s.SitemapLoc)
 	if err != nil {
 		return URLSet{}, nil, err
 	}
@@ -170,14 +140,14 @@ func (s *Sitemap) readSitemap() (URLSet, []*Sitemap, error) {
 	if err == nil && len(sitemapIndex.Sitemaps) > 0 {
 		// It's a sitemap index, process each sub-sitemap
 		for _, sitemap := range sitemapIndex.Sitemaps {
-			if sitemap.Loc == s.Sitemap {
+			if sitemap.Loc == s.SitemapLoc {
 				color.Yellow("Infinite recursion detected, skipping sitemap: %s\n", sitemap.Loc)
 				break
 			}
 			if !strings.Contains(sitemap.Loc, ".xml") {
 				continue
 			}
-			s := &Sitemap{DomainName: s.DomainName, Sitemap: sitemap.Loc}
+			s := &Sitemap{SitemapLoc: sitemap.Loc}
 			sms = append(sms, s)
 			if len(sms) > 200 {
 				break
@@ -203,12 +173,15 @@ func (s *Sitemap) readSitemap() (URLSet, []*Sitemap, error) {
 
 func (d *Domain) getURLsFromSitemaps() {
 	var smsParsed = make(map[string]bool)
+	for _, sf := range d.Sitemaps {
+		smsParsed[sf.SitemapLoc] = true
+	}
 	var urlsFound = make(map[string]bool)
 	for _, sitemap := range d.Sitemaps {
-		if _, exists := smsParsed[sitemap.Sitemap]; exists {
+		if _, exists := smsParsed[sitemap.SitemapLoc]; exists {
 			continue
 		}
-		smsParsed[sitemap.Sitemap] = true
+		smsParsed[sitemap.SitemapLoc] = true
 		urls, sitemaps, err := sitemap.readSitemap()
 		if err != nil {
 			log.Println(err)
@@ -223,9 +196,9 @@ func (d *Domain) getURLsFromSitemaps() {
 			}
 		}
 		for _, s := range sitemaps {
-			if _, exists := smsParsed[s.Sitemap]; !exists {
+			if _, exists := smsParsed[s.SitemapLoc]; !exists {
 				d.Sitemaps = append(d.Sitemaps, s)
-				smsParsed[s.Sitemap] = true
+				smsParsed[s.SitemapLoc] = true
 			}
 		}
 		if len(d.Sitemaps) > 15 {
@@ -238,7 +211,12 @@ func (d *Domain) getURLsFromSitemaps() {
 }
 
 func (d *Domain) GetWebDomainsFromSitemap() {
-	var domsFound = make(map[string]bool)
+	var domsFound map[string]SitemapWebDomain
+	for _, df := range d.SitemapWebDomains {
+		domsFound[df.DomainName] = df
+	}
+	var wd []SitemapWebDomain
+	now := time.Now()
 	for _, u := range d.sitemapURLs {
 		up, err := url.Parse(strings.TrimSpace(u))
 		if err != nil {
@@ -248,16 +226,22 @@ func (d *Domain) GetWebDomainsFromSitemap() {
 		dom, err := NewDomain(up.Host)
 		if err != nil {
 			log.Println(err)
+			continue
 		}
 		if d.DomainName == dom.DomainName {
 			continue
 		}
 		if _, exists := domsFound[dom.DomainName]; !exists {
-			domsFound[dom.DomainName] = true
-			sd := SitemapWebDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dom}}
-			d.SitemapWebDomains = append(d.SitemapWebDomains, sd)
+			sd := SitemapWebDomain{MatchedDomain{CreatedAt: now, UpdatedAt: now, DomainName: dom.DomainName}}
+			domsFound[dom.DomainName] = sd
+			wd = append(wd, sd)
+		} else {
+			sd := domsFound[dom.DomainName]
+			sd.UpdatedAt = now
+			wd = append(wd, sd)
 		}
 	}
+	d.SitemapWebDomains = wd
 }
 
 func (d *Domain) GetContactDomainsFromSitemap() error {
@@ -288,7 +272,12 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 		Timeout:   10 * time.Second, // Overall timeout for the request
 	}
 
-	var domsFound = make(map[string]bool)
+	var domsFound = make(map[string]SitemapContactDomain)
+	for _, df := range d.SitemapContactDomains {
+		domsFound[df.DomainName] = df
+	}
+	var cd []SitemapContactDomain
+	now := time.Now()
 	for _, url := range d.contactPages {
 		resp, err := client.Get(strings.TrimSpace(url))
 		if err != nil {
@@ -315,17 +304,23 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 			dom, err := NewDomain(strings.Split(email, "@")[1])
 			if err != nil {
 				log.Println(err)
+				continue
 			}
 			if d.DomainName == dom.DomainName {
 				continue
 			}
 			if _, exists := domsFound[dom.DomainName]; !exists {
-				domsFound[dom.DomainName] = true
-				sd := SitemapContactDomain{MatchedDomain{DomainName: d.DomainName, Domain: *dom}}
-				d.SitemapContactDomains = append(d.SitemapContactDomains, sd)
+				sd := SitemapContactDomain{MatchedDomain{CreatedAt: now, UpdatedAt: now, DomainName: dom.DomainName}}
+				domsFound[dom.DomainName] = sd
+				cd = append(cd, sd)
+			} else {
+				sd := domsFound[dom.DomainName]
+				sd.UpdatedAt = now
+				cd = append(cd, sd)
 			}
 		}
 	}
+	d.SitemapContactDomains = cd
 	return nil
 
 }
