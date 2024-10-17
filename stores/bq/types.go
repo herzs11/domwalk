@@ -32,7 +32,7 @@ type DomainBQ struct {
 	SitemapContactDomains []MatchedDomainBQ   `bigquery:"sitemap_contact_domains"`
 }
 
-func newDomainBQ(record domains.Domain) DomainBQ {
+func newDomainBQ(record *domains.Domain) DomainBQ {
 	dbq := DomainBQ{
 		CreatedAt:            record.CreatedAt,
 		UpdatedAt:            record.UpdatedAt,
@@ -105,8 +105,8 @@ func newDomainBQ(record domains.Domain) DomainBQ {
 	return dbq
 }
 
-func (a *DomainBQ) parse() domains.Domain {
-	d := domains.Domain{
+func (a *DomainBQ) parse() *domains.Domain {
+	d := &domains.Domain{
 		CreatedAt:            a.CreatedAt,
 		UpdatedAt:            a.UpdatedAt,
 		DomainName:           a.DomainName,

@@ -83,8 +83,9 @@ func (d *Domain) getRobotstxt() error {
 	if len(robots.Sitemaps) > 11 {
 		robots.Sitemaps = robots.Sitemaps[:11]
 	}
+	now := time.Now()
 	for _, sitemap := range robots.Sitemaps {
-		d.Sitemaps = append(d.Sitemaps, &Sitemap{SitemapLoc: sitemap})
+		d.Sitemaps = append(d.Sitemaps, &Sitemap{CreatedAt: now, UpdatedAt: now, SitemapLoc: sitemap})
 	}
 
 	return nil
@@ -215,7 +216,6 @@ func (d *Domain) GetWebDomainsFromSitemap() {
 	for _, df := range d.SitemapWebDomains {
 		domsFound[df.DomainName] = df
 	}
-	var wd []SitemapWebDomain
 	now := time.Now()
 	for _, u := range d.sitemapURLs {
 		up, err := url.Parse(strings.TrimSpace(u))
@@ -231,15 +231,17 @@ func (d *Domain) GetWebDomainsFromSitemap() {
 		if d.DomainName == dom.DomainName {
 			continue
 		}
-		if _, exists := domsFound[dom.DomainName]; !exists {
+		if df, exists := domsFound[dom.DomainName]; !exists {
 			sd := SitemapWebDomain{MatchedDomain{CreatedAt: now, UpdatedAt: now, DomainName: dom.DomainName}}
 			domsFound[dom.DomainName] = sd
-			wd = append(wd, sd)
 		} else {
-			sd := domsFound[dom.DomainName]
-			sd.UpdatedAt = now
-			wd = append(wd, sd)
+			df.UpdatedAt = now
+			domsFound[dom.DomainName] = df
 		}
+	}
+	var wd []SitemapWebDomain
+	for _, df := range domsFound {
+		wd = append(wd, df)
 	}
 	d.SitemapWebDomains = wd
 }
@@ -276,7 +278,6 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 	for _, df := range d.SitemapContactDomains {
 		domsFound[df.DomainName] = df
 	}
-	var cd []SitemapContactDomain
 	now := time.Now()
 	for _, url := range d.contactPages {
 		resp, err := client.Get(strings.TrimSpace(url))
@@ -309,16 +310,18 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 			if d.DomainName == dom.DomainName {
 				continue
 			}
-			if _, exists := domsFound[dom.DomainName]; !exists {
+			if df, exists := domsFound[dom.DomainName]; !exists {
 				sd := SitemapContactDomain{MatchedDomain{CreatedAt: now, UpdatedAt: now, DomainName: dom.DomainName}}
 				domsFound[dom.DomainName] = sd
-				cd = append(cd, sd)
 			} else {
-				sd := domsFound[dom.DomainName]
-				sd.UpdatedAt = now
-				cd = append(cd, sd)
+				df.UpdatedAt = now
+				domsFound[dom.DomainName] = df
 			}
 		}
+	}
+	var cd []SitemapContactDomain
+	for _, df := range domsFound {
+		cd = append(cd, df)
 	}
 	d.SitemapContactDomains = cd
 	return nil

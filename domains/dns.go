@@ -50,14 +50,12 @@ func (d *Domain) QueryMX() error {
 	for _, m := range d.MXRecords {
 		foundMx[m.Mx] = m
 	}
-	var mxs []MXRecord
 	now := time.Now()
 	for _, ans := range r.Answer {
 		if a, ok := ans.(*dns.MX); ok {
-			if _, ok := foundMx[a.Mx]; ok {
-				m := foundMx[a.Mx]
+			if m, ok := foundMx[a.Mx]; ok {
 				m.UpdatedAt = now
-				mxs = append(mxs, m)
+				foundMx[a.Mx] = m
 			} else {
 				r := MXRecord{
 					CreatedAt: now,
@@ -65,12 +63,12 @@ func (d *Domain) QueryMX() error {
 					Mx:        a.Mx,
 				}
 				foundMx[a.Mx] = r
-				mxs = append(
-					mxs,
-					r,
-				)
 			}
 		}
+	}
+	var mxs []MXRecord
+	for _, mx := range foundMx {
+		mxs = append(mxs, mx)
 	}
 	d.MXRecords = mxs
 	return nil
@@ -87,20 +85,21 @@ func (d *Domain) QueryA() error {
 	for _, a := range d.ARecords {
 		foundA[a.IP] = a
 	}
-	var ips []ARecord
 	now := time.Now()
 	for _, ans := range r.Answer {
 		if a, ok := ans.(*dns.A); ok {
-			if _, ok := foundA[a.A.String()]; ok {
-				ip := foundA[a.A.String()]
+			if ip, ok := foundA[a.A.String()]; ok {
 				ip.UpdatedAt = now
-				ips = append(ips, ip)
+				foundA[a.A.String()] = ip
 				continue
 			}
 			r := ARecord{IP: a.A.String(), CreatedAt: now, UpdatedAt: now}
 			foundA[a.A.String()] = r
-			ips = append(ips, r)
 		}
+	}
+	var ips []ARecord
+	for _, ip := range foundA {
+		ips = append(ips, ip)
 	}
 	d.ARecords = ips
 	return nil
@@ -117,20 +116,21 @@ func (d *Domain) QueryAAAA() error {
 	for _, a := range d.AAAARecords {
 		foundA[a.IPV6] = a
 	}
-	var ips []AAAARecord
 	now := time.Now()
 	for _, ans := range r.Answer {
 		if a, ok := ans.(*dns.AAAA); ok {
-			if _, ok := foundA[a.AAAA.String()]; ok {
-				ip := foundA[a.AAAA.String()]
+			if ip, ok := foundA[a.AAAA.String()]; ok {
 				ip.UpdatedAt = now
-				ips = append(ips, ip)
+				foundA[a.AAAA.String()] = ip
 				continue
 			}
 			r := AAAARecord{IPV6: a.AAAA.String(), CreatedAt: now, UpdatedAt: now}
 			foundA[a.AAAA.String()] = r
-			ips = append(ips, r)
 		}
+	}
+	var ips []AAAARecord
+	for _, ip := range foundA {
+		ips = append(ips, ip)
 	}
 	d.AAAARecords = ips
 	return nil
@@ -143,10 +143,11 @@ func (d *Domain) QuerySOA() error {
 	if err != nil {
 		return err
 	}
+	now := time.Now()
 	var soas []SOARecord
 	for _, ans := range r.Answer {
 		if a, ok := ans.(*dns.SOA); ok {
-			soas = append(soas, SOARecord{NS: a.Ns, MBox: a.Mbox, Serial: a.Serial})
+			soas = append(soas, SOARecord{CreatedAt: now, UpdatedAt: now, NS: a.Ns, MBox: a.Mbox, Serial: a.Serial})
 		}
 	}
 	d.SOARecords = soas
