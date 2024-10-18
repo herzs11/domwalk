@@ -18,7 +18,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	functions.HTTP("handleDomainEnrichment", handleDomainEnrichment(bqs))
+	functions.HTTP("enrich", handleDomainEnrichment(bqs))
 }
 
 func handleDomainEnrichment(bqs *bq.BQStore) http.HandlerFunc {

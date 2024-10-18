@@ -27,26 +27,5 @@ get-deps:
 install-cli:
 	GOARCH=$(ARCH) go install .
 
-
-# Install the CLI tool (including Go installation and build)
-install: install-go install-cli
-	@if [ -z "$$GOOGLE_APPLICATION_CREDENTIALS" ]; then \
-		echo "Error: \$GOOGLE_APPLICATION_CREDENTIALS environment variable is not set."; \
-		echo "Please set it to the path of your Google Cloud service account key file."; \
-		exit 1; \
-	fi
-	@read -p "Enter the path to your SQLite database (default: $$HOME/.domwalk.db): " DB_PATH; \
-	if [ -z "$$DB_PATH" ]; then \
-		DB_PATH="$$HOME/.domwalk.db"; \
-	fi; \
-	if [ -n "$ZSH_VERSION" ]; then \
-		echo "export DOMWALK_SQLITE_NAME=\"$$DB_PATH\"" >> ~/.zshrc; \
-		(zsh -c "source ~/.zshrc"); \
-	elif [ -n "$BASH_VERSION" ]; then \
-		echo "export DOMWALK_SQLITE_NAME=\"$$DB_PATH\"" >> ~/.bash_profile; \
-		(bash -c "source ~/.bash_profile"); \
-	else \
-		echo "Warning: Unsupported shell. Please manually set the DOMWALK_SQLITE_NAME environment variable."; \
-	fi
-	@echo "Installation complete!";
-	@echo "The DOMWALK_SQLITE_NAME environment variable has been set (or instructions provided).";
+test-cf:
+	go run ./cloud_functions/cloud_functions_test/main.go
