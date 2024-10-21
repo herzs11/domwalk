@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/weppos/publicsuffix-go/publicsuffix"
@@ -19,13 +18,7 @@ func (d *Domain) GetRedirectDomains() error {
 	d.LastRanWebRedirect = time.Now()
 	hosts := make(map[string]bool)
 	finalURL := fmt.Sprintf("https://%s", d.DomainName)
-	proxyURL, err := url.Parse("http://localhost:9000") //  TODO: Make this configurable
-	if err != nil {
-		fmt.Printf("Error parsing proxy URL: %s\n", err)
-		return err
-	}
 	transport := &http.Transport{
-		Proxy: http.ProxyURL(proxyURL),
 		DialContext: (&net.Dialer{
 			Timeout:   5 * time.Second, // Maximum amount of time to wait for a dial to complete
 			KeepAlive: 3 * time.Second, // Keep-alive period for an active network connection

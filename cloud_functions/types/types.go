@@ -1,7 +1,7 @@
 package types
 
 import (
-	"domwalk/domains"
+	"dev.azure.com/Unum/Mkt_Analytics/_git/domwalk/domains"
 )
 
 type RequestParams struct {

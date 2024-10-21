@@ -93,13 +93,7 @@ func (d *Domain) getRobotstxt() error {
 
 func (s *Sitemap) readSitemap() (URLSet, []*Sitemap, error) {
 	// add proxy
-	proxyURL, err := url.Parse("http://localhost:9000")
-	if err != nil {
-		fmt.Printf("Error parsing proxy URL: %s\n", err)
-		return URLSet{}, nil, err
-	}
 	transport := &http.Transport{
-		Proxy: http.ProxyURL(proxyURL),
 		DialContext: (&net.Dialer{
 			Timeout:   5 * time.Second, // Maximum amount of time to wait for a dial to complete
 			KeepAlive: 3 * time.Second, // Keep-alive period for an active network connection
@@ -252,13 +246,7 @@ func (d *Domain) GetContactDomainsFromSitemap() error {
 		return fmt.Errorf("No contact pages found in sitemap")
 	}
 
-	proxyURL, err := url.Parse("http://localhost:9000")
-	if err != nil {
-		log.Printf("Error parsing proxy URL: %s\n", err)
-		return err
-	}
 	transport := &http.Transport{
-		Proxy: http.ProxyURL(proxyURL),
 		DialContext: (&net.Dialer{
 			Timeout:   5 * time.Second, // Maximum amount of time to wait for a dial to complete
 			KeepAlive: 3 * time.Second, // Keep-alive period for an active network connection
