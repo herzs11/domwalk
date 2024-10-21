@@ -12,8 +12,8 @@ import (
 	"os"
 	"time"
 
-	"domwalk/cloud_functions/types"
-	"domwalk/domains"
+	"dev.azure.com/Unum/Mkt_Analytics/_git/domwalk/cloud_functions/types"
+	"dev.azure.com/Unum/Mkt_Analytics/_git/domwalk/domains"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
