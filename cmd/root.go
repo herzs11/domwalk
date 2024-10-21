@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/herzs11/domwalk/cloud_functions/types"
 	"github.com/herzs11/domwalk/domains"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -23,8 +22,8 @@ const ENRICH_DOMAIN_CF_URL = "http://localhost:8080/enrich"
 
 var (
 	domainsToExecute []string
-	processConfig    types.ProcessConfig
-	rParams          types.RequestParams
+	processConfig    ProcessConfig
+	rParams          RequestParams
 	token            *oauth2.Token
 )
 
@@ -74,7 +73,7 @@ var rootCmd = &cobra.Command{
 			sm = true
 			dns = true
 		}
-		processConfig = types.ProcessConfig{
+		processConfig = ProcessConfig{
 			Workers: workers,
 			EnrichmentConfig: domains.EnrichmentConfig{
 				CertSans:         cs,
@@ -88,7 +87,7 @@ var rootCmd = &cobra.Command{
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		noReturn, _ := cmd.Flags().GetBool("no-return")
 		onlyMatched, _ := cmd.Flags().GetBool("only-matched")
-		rParams = types.RequestParams{
+		rParams = RequestParams{
 			DomainNames:        domainsToExecute,
 			ProcessConfig:      processConfig,
 			NoResponse:         noReturn,

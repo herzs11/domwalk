@@ -3,7 +3,7 @@ package cloud_functions
 import (
 	"sync"
 
-	"github.com/herzs11/domwalk/cloud_functions/types"
+	"cloud_functions/types"
 	"github.com/herzs11/domwalk/domains"
 )
 

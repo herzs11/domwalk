@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 
+	"cloud_functions/types"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
-	"github.com/herzs11/domwalk/cloud_functions/types"
 	"github.com/herzs11/domwalk/domains"
 	"github.com/herzs11/domwalk/stores/bq"
 )
