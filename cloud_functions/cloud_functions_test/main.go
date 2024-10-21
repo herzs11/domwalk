@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	_ "dev.azure.com/Unum/Mkt_Analytics/_git/domwalk/cloud_functions"
 	"github.com/GoogleCloudPlatform/functions-framework-go/funcframework"
+	_ "github.com/herzs11/domwalk/cloud_functions"
 )
 
 func main() {

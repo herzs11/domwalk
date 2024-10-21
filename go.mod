@@ -1,4 +1,4 @@
-module dev.azure.com/Unum/Mkt_Analytics/_git/domwalk
+module github.com/herzs11/domwalk
 
 go 1.22.1
 

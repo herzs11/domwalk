@@ -7,10 +7,10 @@ import (
 	"log"
 	"net/http"
 
-	"dev.azure.com/Unum/Mkt_Analytics/_git/domwalk/cloud_functions/types"
-	"dev.azure.com/Unum/Mkt_Analytics/_git/domwalk/domains"
-	"dev.azure.com/Unum/Mkt_Analytics/_git/domwalk/stores/bq"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
+	"github.com/herzs11/domwalk/cloud_functions/types"
+	"github.com/herzs11/domwalk/domains"
+	"github.com/herzs11/domwalk/stores/bq"
 )
 
 func init() {

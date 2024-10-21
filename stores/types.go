@@ -3,7 +3,7 @@ package stores
 import (
 	"context"
 
-	"dev.azure.com/Unum/Mkt_Analytics/_git/domwalk/domains"
+	"github.com/herzs11/domwalk/domains"
 )
 
 type DomainStorer interface {

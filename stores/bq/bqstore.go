@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"dev.azure.com/Unum/Mkt_Analytics/_git/domwalk/domains"
+	"github.com/herzs11/domwalk/domains"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 )
