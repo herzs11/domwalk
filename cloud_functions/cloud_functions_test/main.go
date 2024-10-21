@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	_ "cloud_functions"
+	_ "dev.azure.com/Unum/Mkt_Analytics/_git/cloud_functions"
 	"github.com/GoogleCloudPlatform/functions-framework-go/funcframework"
 )
 

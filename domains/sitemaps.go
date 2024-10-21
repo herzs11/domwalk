@@ -206,7 +206,7 @@ func (d *Domain) getURLsFromSitemaps() {
 }
 
 func (d *Domain) GetWebDomainsFromSitemap() {
-	var domsFound map[string]SitemapWebDomain
+	var domsFound = make(map[string]SitemapWebDomain)
 	for _, df := range d.SitemapWebDomains {
 		domsFound[df.DomainName] = df
 	}

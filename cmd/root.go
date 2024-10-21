@@ -18,7 +18,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const ENRICH_DOMAIN_CF_URL = "http://localhost:8080/enrich"
+const ENRICH_DOMAIN_CF_URL = "https://us-east1-unum-marketing-data-assets.cloudfunctions.net/go-http-function"
 
 var (
 	domainsToExecute []string

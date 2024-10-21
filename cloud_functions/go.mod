@@ -1,8 +1,9 @@
-module cloud_functions
+module dev.azure.com/Unum/Mkt_Analytics/_git/cloud_functions
 
 go 1.22.1
 
 replace github.com/herzs11/domwalk => ../../domwalk
+replace dev.azure.com/Unum/Mkt_Analytics/_git/cloud_functions => ../cloud_functions
 
 require (
 	github.com/GoogleCloudPlatform/functions-framework-go v1.9.0

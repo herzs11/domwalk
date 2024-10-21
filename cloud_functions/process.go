@@ -3,7 +3,7 @@ package cloud_functions
 import (
 	"sync"
 
-	"cloud_functions/types"
+	"dev.azure.com/Unum/Mkt_Analytics/_git/cloud_functions/types"
 	"github.com/herzs11/domwalk/domains"
 )
 
