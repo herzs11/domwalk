@@ -18,7 +18,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const ENRICH_DOMAIN_CF_URL = "https://us-east1-unum-marketing-data-assets.cloudfunctions.net/go-http-function"
+const ENRICH_DOMAIN_CF_URL = "https://us-east1-unum-marketing-data-assets.cloudfunctions.net/domwalk"
 
 var (
 	domainsToExecute []string
@@ -49,7 +49,6 @@ var rootCmd = &cobra.Command{
 		token, err = getCredentials()
 		if err != nil {
 			color.Red(err.Error())
-			os.Exit(1)
 		}
 		domainsToExecute = args
 		cs, _ := cmd.Flags().GetBool("cert-sans")
@@ -103,8 +102,25 @@ var rootCmd = &cobra.Command{
 			color.Red("Error creating request: %s\n", err.Error())
 			os.Exit(1)
 		}
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
-		resp, err := http.DefaultClient.Do(req)
+		if token.AccessToken != "" {
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
+		}
+		// Create client with no timeout
+		// This is a CLI tool and we want to wait for the response
+		// If the request hangs, the user can kill the process
+		client := http.DefaultClient
+		client.Timeout = 0
+		proxyUrl, err := http.ProxyFromEnvironment(req)
+		if err != nil {
+			fmt.Println("Error getting proxy URL: ", err)
+		}
+		if proxyUrl != nil {
+			transport := &http.Transport{
+				Proxy: http.ProxyURL(proxyUrl),
+			}
+			client.Transport = transport
+		}
+		resp, err := client.Do(req)
 		if err != nil {
 			color.Red("Error sending request: %s\n", err.Error())
 			os.Exit(1)

@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -23,7 +24,10 @@ func getCredentials() (*oauth2.Token, error) {
 
 	ts, err := idtoken.NewTokenSource(ctx, ENRICH_DOMAIN_CF_URL, option.WithCredentials(credentials))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create NewTokenSource: %w", err)
+		return &oauth2.Token{
+			AccessToken: "",
+			Expiry:      time.Now().Add(time.Hour),
+		}, fmt.Errorf("failed to create NewTokenSource: %w, continuing without authentication...", err)
 	}
 
 	tok, err := ts.Token()

@@ -15,7 +15,7 @@ func TestDomains(t *testing.T) {
 		t.Fatal(err)
 	}
 	d := []string{
-		"ukg.com",
+		"piibr.com",
 	}
 	doms, err := bqs.GetDomainsByNames(context.Background(), d)
 	if err != nil {

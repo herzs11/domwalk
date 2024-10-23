@@ -21,6 +21,17 @@ install-go:
 		echo "Go installed successfully."; \
 	fi
 
+deploy-cf:
+	@cd cloud_functions && go mod vendor && gcloud functions deploy domwalk \
+         --gen2 \
+         --runtime=go122 \
+         --region=us-east1 \
+         --source=. \
+         --entry-point=enrich \
+         --trigger-http \
+         --allow-unauthenticated \
+         --timeout 3600
+
 get-deps:
 	go mod download
 
