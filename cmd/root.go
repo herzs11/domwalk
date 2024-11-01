@@ -18,7 +18,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const ENRICH_DOMAIN_CF_URL = "https://us-east1-unum-marketing-data-assets.cloudfunctions.net/domwalk"
+var ENRICH_DOMAIN_CF_URL string
 
 var (
 	domainsToExecute []string
@@ -32,8 +32,7 @@ var rootCmd = &cobra.Command{
 	Use:   "domwalk",
 	Short: "CLI tool to find and store domain relationships",
 	Long: `domwalk is a CLI tool to find and store domain relationships.
-	It is written in Go and uses GORM and a local SQLite backend.
-	Data is stored in a local SQLite database and can be pushed to BigQuery.
+	It is written in Go and acts as a client for a domain enrichment Cloud Function.
 
 	Currently, the tool can enrich domains with the following relationships:
 	- Certificate Subject Alternative Names (SANs)
@@ -45,6 +44,11 @@ var rootCmd = &cobra.Command{
 	`,
 	Example: `domwalk domains -d unum.com,coloniallife.com --workers 20 --cert-sans --web-redirects --sitemaps --dns`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		ENRICH_DOMAIN_CF_URL = os.Getenv("ENRICH_DOMAIN_CF_URL")
+		if ENRICH_DOMAIN_CF_URL == "" {
+			color.Red("ENRICH_DOMAIN_CF_URL environment variable must be set\n")
+			os.Exit(1)
+		}
 		var err error
 		token, err = getCredentials()
 		if err != nil {
