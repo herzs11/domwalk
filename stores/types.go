@@ -3,7 +3,7 @@ package stores
 import (
 	"context"
 
-	"domwalk/domains"
+	"github.com/herzs11/domwalk/domains"
 )
 
 type DomainStorer interface {

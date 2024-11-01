@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"domwalk/domains"
+	"github.com/herzs11/domwalk/domains"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 )
@@ -166,10 +166,10 @@ func (bq *BQStore) GetDomainsByNames(ctx context.Context, doms []string) ([]*dom
 	qry := bq.Client.Query(
 		`SELECT * FROM ` + fmt.Sprintf(
 			"%s.%s", bq.Dataset.DatasetID, bq.Table.TableID,
-		) + ` WHERE domain_name IN UNNEST(@d)`,
+		) + ` WHERE domain_name IN UNNEST(@dns)`,
 	)
 	qry.Parameters = []bigquery.QueryParameter{
-		{Name: "d", Value: doms},
+		{Name: "dns", Value: doms},
 	}
 	it, err := qry.Read(ctx)
 	if err != nil {

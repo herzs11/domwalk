@@ -8,8 +8,6 @@ import (
 
 	"github.com/temoto/robotstxt"
 	"github.com/weppos/publicsuffix-go/publicsuffix"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type Domain struct {
@@ -40,24 +38,6 @@ type Domain struct {
 	contactPages []string
 
 	*robotstxt.RobotsData
-}
-
-func (d *Domain) BeforeCreate(tx *gorm.DB) (err error) {
-	tx.Statement.AddClause(
-		clause.OnConflict{
-			Columns: []clause.Column{{Name: "domain_name"}},
-			DoUpdates: clause.Assignments(
-				map[string]interface{}{
-					"updated_at":             gorm.Expr("MAX(updated_at, excluded.updated_at)"),
-					"last_ran_web_redirect":  gorm.Expr("MAX(last_ran_web_redirect, excluded.last_ran_web_redirect)"),
-					"last_ran_dns":           gorm.Expr("MAX(last_ran_dns, excluded.last_ran_dns)"),
-					"last_ran_cert_sans":     gorm.Expr("MAX(last_ran_cert_sans, excluded.last_ran_cert_sans)"),
-					"last_ran_sitemap_parse": gorm.Expr("MAX(last_ran_sitemap_parse, excluded.last_ran_sitemap_parse)"),
-				},
-			),
-		},
-	)
-	return nil
 }
 
 func (d *Domain) parseDomain() error {

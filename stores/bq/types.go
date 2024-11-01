@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"domwalk/domains"
+	"github.com/herzs11/domwalk/domains"
 )
 
 type DomainBQ struct {

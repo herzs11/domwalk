@@ -1,9 +1,9 @@
 /*
-Copyright © 2024 Seth Herz sherz@unum.com
+Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 */
 package main
 
-import "domwalk/cmd"
+import "github.com/herzs11/domwalk/cmd"
 
 func main() {
 	cmd.Execute()

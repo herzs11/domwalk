@@ -7,10 +7,10 @@ import (
 	"log"
 	"net/http"
 
-	"domwalk/cloud_functions/types"
-	"domwalk/domains"
-	"domwalk/stores/bq"
+	"dev.azure.com/Unum/Mkt_Analytics/_git/cloud_functions/types"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
+	"github.com/herzs11/domwalk/domains"
+	"github.com/herzs11/domwalk/stores/bq"
 )
 
 func init() {
@@ -18,7 +18,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	functions.HTTP("handleDomainEnrichment", handleDomainEnrichment(bqs))
+	functions.HTTP("enrich", handleDomainEnrichment(bqs))
 }
 
 func handleDomainEnrichment(bqs *bq.BQStore) http.HandlerFunc {
@@ -32,6 +32,7 @@ func handleDomainEnrichment(bqs *bq.BQStore) http.HandlerFunc {
 			)
 			return
 		}
+		log.Println(rParams)
 		doms, err := bqs.GetDomainsByNames(context.Background(), rParams.DomainNames)
 		if err != nil {
 			writeJSON(
@@ -40,7 +41,7 @@ func handleDomainEnrichment(bqs *bq.BQStore) http.HandlerFunc {
 			return
 		}
 		enrichDomains(doms, rParams.ProcessConfig)
-		go bqs.PutDomains(context.Background(), doms)
+		go log.Println(bqs.PutDomains(context.Background(), doms))
 		if rParams.NoResponse {
 			writeJSON(w, http.StatusOK, map[string]string{"message": "Enriched domains"})
 			return

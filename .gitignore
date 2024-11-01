@@ -12,3 +12,4 @@ go.work
 LICENSE
 domwalk
 docs/domwalk_completion_powershell.md
+**/vendor/

@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/weppos/publicsuffix-go/publicsuffix"
@@ -19,13 +18,7 @@ func (d *Domain) GetRedirectDomains() error {
 	d.LastRanWebRedirect = time.Now()
 	hosts := make(map[string]bool)
 	finalURL := fmt.Sprintf("https://%s", d.DomainName)
-	proxyURL, err := url.Parse("http://localhost:9000") //  TODO: Make this configurable
-	if err != nil {
-		fmt.Printf("Error parsing proxy URL: %s\n", err)
-		return err
-	}
 	transport := &http.Transport{
-		Proxy: http.ProxyURL(proxyURL),
 		DialContext: (&net.Dialer{
 			Timeout:   5 * time.Second, // Maximum amount of time to wait for a dial to complete
 			KeepAlive: 3 * time.Second, // Keep-alive period for an active network connection
@@ -55,6 +48,7 @@ func (d *Domain) GetRedirectDomains() error {
 	resp, err := client.Get(fmt.Sprintf("http://%s", d.DomainName))
 	if err != nil {
 		d.SuccessfulWebLanding = false
+		d.WebRedirectDomains = []WebRedirectDomain{}
 		return fmt.Errorf("failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
@@ -62,9 +56,11 @@ func (d *Domain) GetRedirectDomains() error {
 	d.WebRedirectURLFinal = finalURL
 	if len(hosts) == 0 {
 		d.SuccessfulWebLanding = true
+		d.WebRedirectDomains = []WebRedirectDomain{}
 		return nil
 	}
 	now := time.Now()
+	wrs := []WebRedirectDomain{}
 	for host := range hosts {
 		rdom, err := NewDomain(host)
 		if err != nil {
@@ -72,7 +68,8 @@ func (d *Domain) GetRedirectDomains() error {
 			continue
 		}
 		wr := WebRedirectDomain{MatchedDomain{CreatedAt: now, UpdatedAt: now, DomainName: rdom.DomainName}}
-		d.WebRedirectDomains = append(d.WebRedirectDomains, wr)
+		wrs = append(wrs, wr)
 	}
+	d.WebRedirectDomains = wrs
 	return nil
 }

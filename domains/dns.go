@@ -160,21 +160,10 @@ func query(msg *dns.Msg, nameserver string) (*dns.Msg, error) {
 }
 
 func queryAllServers(msg *dns.Msg) (*dns.Msg, error) {
-	for _, ns := range ClientConfig.Servers {
-		r, err := query(msg, ns+":"+ClientConfig.Port)
-		if err == nil {
-			return r, nil
-		}
-	}
-	log.Printf(
-		"Failed to query record for domain %s with configured servers, trying with google DNS...\n",
-		msg.Question[0].Name,
-	)
 	r, err := query(msg, "8.8.8.8:53")
 	if err == nil {
 		return r, nil
 	}
-
 	return nil, errors.New("Failed to query all servers")
 }
 

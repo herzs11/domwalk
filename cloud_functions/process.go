@@ -3,8 +3,8 @@ package cloud_functions
 import (
 	"sync"
 
-	"domwalk/cloud_functions/types"
-	"domwalk/domains"
+	"dev.azure.com/Unum/Mkt_Analytics/_git/cloud_functions/types"
+	"github.com/herzs11/domwalk/domains"
 )
 
 func enrichDomains(doms []*domains.Domain, cfg types.ProcessConfig) {

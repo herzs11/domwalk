@@ -1,4 +1,4 @@
-package types
+package cmd
 
 import (
 	"github.com/herzs11/domwalk/domains"
