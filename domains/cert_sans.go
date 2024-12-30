@@ -35,6 +35,7 @@ func (d *Domain) GetCertSANs() error {
 	}
 	defer tlsConn.Close()
 	cert := tlsConn.ConnectionState().PeerCertificates[0]
+	d.CertOrgNames = cert.Subject.Organization
 	now := time.Now()
 	domsFound := make(map[string]CertSansDomain)
 	for _, df := range d.CertSANs {

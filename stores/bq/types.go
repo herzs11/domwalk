@@ -2,34 +2,35 @@ package bq
 
 import (
 	"time"
-
+	
 	"cloud.google.com/go/bigquery"
 	"github.com/herzs11/domwalk/domains"
 )
 
 type DomainBQ struct {
-	CreatedAt             time.Time           `bigquery:"created_at"`
-	UpdatedAt             time.Time           `bigquery:"updated_at"`
-	DomainName            string              `bigquery:"domain_name"`
-	NonPublicDomain       bool                `bigquery:"non_public_domain"`
-	Hostname              bigquery.NullString `bigquery:"hostname"`
-	Subdomain             bigquery.NullString `bigquery:"subdomain"`
-	Suffix                bigquery.NullString `bigquery:"suffix"`
-	SuccessfulWebLanding  bool                `bigquery:"successful_web_landing"`
-	WebRedirectURLFinal   bigquery.NullString `bigquery:"web_redirect_url_final"`
-	LastRanWebRedirect    time.Time           `bigquery:"last_ran_web_redirect"`
-	LastRanDns            time.Time           `bigquery:"last_ran_dns"`
-	LastRanCertSans       time.Time           `bigquery:"last_ran_cert_sans"`
-	LastRanSitemapParse   time.Time           `bigquery:"last_ran_sitemap_parse"`
-	ARecords              []ARecordBQ         `bigquery:"a_records"`
-	AAAARecords           []AAAARecordBQ      `bigquery:"aaaa_records"`
-	MXRecords             []MXRecordBQ        `bigquery:"mx_records"`
-	SOARecords            []SOARecordBQ       `bigquery:"soa_records"`
-	Sitemaps              []SitemapBQ         `bigquery:"sitemaps"`
-	WebRedirectDomains    []MatchedDomainBQ   `bigquery:"web_redirect_domains"`
-	CertSANs              []MatchedDomainBQ   `bigquery:"cert_sans"`
-	SitemapWebDomains     []MatchedDomainBQ   `bigquery:"sitemap_web_domains"`
-	SitemapContactDomains []MatchedDomainBQ   `bigquery:"sitemap_contact_domains"`
+	CreatedAt             time.Time             `bigquery:"created_at"`
+	UpdatedAt             time.Time             `bigquery:"updated_at"`
+	DomainName            string                `bigquery:"domain_name"`
+	NonPublicDomain       bool                  `bigquery:"non_public_domain"`
+	Hostname              bigquery.NullString   `bigquery:"hostname"`
+	Subdomain             bigquery.NullString   `bigquery:"subdomain"`
+	Suffix                bigquery.NullString   `bigquery:"suffix"`
+	SuccessfulWebLanding  bool                  `bigquery:"successful_web_landing"`
+	WebRedirectURLFinal   bigquery.NullString   `bigquery:"web_redirect_url_final"`
+	LastRanWebRedirect    time.Time             `bigquery:"last_ran_web_redirect"`
+	LastRanDns            time.Time             `bigquery:"last_ran_dns"`
+	LastRanCertSans       time.Time             `bigquery:"last_ran_cert_sans"`
+	LastRanSitemapParse   time.Time             `bigquery:"last_ran_sitemap_parse"`
+	ARecords              []ARecordBQ           `bigquery:"a_records"`
+	AAAARecords           []AAAARecordBQ        `bigquery:"aaaa_records"`
+	MXRecords             []MXRecordBQ          `bigquery:"mx_records"`
+	SOARecords            []SOARecordBQ         `bigquery:"soa_records"`
+	Sitemaps              []SitemapBQ           `bigquery:"sitemaps"`
+	WebRedirectDomains    []MatchedDomainBQ     `bigquery:"web_redirect_domains"`
+	CertSANs              []MatchedDomainBQ     `bigquery:"cert_sans"`
+	SitemapWebDomains     []MatchedDomainBQ     `bigquery:"sitemap_web_domains"`
+	SitemapContactDomains []MatchedDomainBQ     `bigquery:"sitemap_contact_domains"`
+	CertOrgNames          []bigquery.NullString `bigquery:"cert_org_names"`
 }
 
 func newDomainBQ(record *domains.Domain) DomainBQ {
@@ -47,61 +48,66 @@ func newDomainBQ(record *domains.Domain) DomainBQ {
 		LastRanCertSans:      record.LastRanCertSans,
 		LastRanSitemapParse:  record.LastRanSitemapParse,
 	}
+	var certOrgs []bigquery.NullString
+	for _, n := range record.CertOrgNames {
+		certOrgs = append(certOrgs, bigquery.NullString{Valid: n != "", StringVal: n})
+	}
+	dbq.CertOrgNames = certOrgs
 	var aRecords []ARecordBQ
 	for _, a := range record.ARecords {
 		aRecords = append(aRecords, newARecordBQ(a))
 	}
 	dbq.ARecords = aRecords
-
+	
 	var aaaaRecords []AAAARecordBQ
 	for _, a := range record.AAAARecords {
 		aaaaRecords = append(aaaaRecords, newAAAARecordBQ(a))
 	}
 	dbq.AAAARecords = aaaaRecords
-
+	
 	var mxRecords []MXRecordBQ
 	for _, a := range record.MXRecords {
 		mxRecords = append(mxRecords, newMXRecordBQ(a))
 	}
-
+	
 	dbq.MXRecords = mxRecords
-
+	
 	var soaRecords []SOARecordBQ
 	for _, a := range record.SOARecords {
 		soaRecords = append(soaRecords, newSOARecordBQ(a))
 	}
 	dbq.SOARecords = soaRecords
-
+	
 	var sitemaps []SitemapBQ
 	for _, a := range record.Sitemaps {
 		sitemaps = append(sitemaps, newSitemapBQ(*a))
 	}
 	dbq.Sitemaps = sitemaps
-
+	
 	var webRedirectDomains []MatchedDomainBQ
 	for _, a := range record.WebRedirectDomains {
 		webRedirectDomains = append(webRedirectDomains, newMatchedDomainBQ(a.MatchedDomain))
 	}
 	dbq.WebRedirectDomains = webRedirectDomains
-
+	
 	var certSANs []MatchedDomainBQ
 	for _, a := range record.CertSANs {
 		certSANs = append(certSANs, newMatchedDomainBQ(a.MatchedDomain))
 	}
 	dbq.CertSANs = certSANs
-
+	
 	var sitemapWebDomains []MatchedDomainBQ
 	for _, a := range record.SitemapWebDomains {
 		sitemapWebDomains = append(sitemapWebDomains, newMatchedDomainBQ(a.MatchedDomain))
 	}
 	dbq.SitemapWebDomains = sitemapWebDomains
-
+	
 	var sitemapContactDomains []MatchedDomainBQ
 	for _, a := range record.SitemapContactDomains {
 		sitemapContactDomains = append(sitemapContactDomains, newMatchedDomainBQ(a.MatchedDomain))
 	}
 	dbq.SitemapContactDomains = sitemapContactDomains
-
+	
 	return dbq
 }
 
@@ -120,60 +126,65 @@ func (a *DomainBQ) parse() *domains.Domain {
 		LastRanCertSans:      a.LastRanCertSans,
 		LastRanSitemapParse:  a.LastRanSitemapParse,
 	}
+	var certOrgs []string
+	for _, n := range a.CertOrgNames {
+		certOrgs = append(certOrgs, n.String())
+	}
+	d.CertOrgNames = certOrgs
 	var aRecords []domains.ARecord
 	for _, a := range a.ARecords {
 		aRecords = append(aRecords, a.parse())
 	}
 	d.ARecords = aRecords
-
+	
 	var aaaaRecords []domains.AAAARecord
 	for _, a := range a.AAAARecords {
 		aaaaRecords = append(aaaaRecords, a.parse())
 	}
 	d.AAAARecords = aaaaRecords
-
+	
 	var mxRecords []domains.MXRecord
 	for _, a := range a.MXRecords {
 		mxRecords = append(mxRecords, a.parse())
 	}
 	d.MXRecords = mxRecords
-
+	
 	var soaRecords []domains.SOARecord
 	for _, a := range a.SOARecords {
 		soaRecords = append(soaRecords, a.parse())
 	}
 	d.SOARecords = soaRecords
-
+	
 	var sitemaps []*domains.Sitemap
 	for _, a := range a.Sitemaps {
 		sitemaps = append(sitemaps, a.parse())
 	}
 	d.Sitemaps = sitemaps
-
+	
 	var webRedirectDomains []domains.WebRedirectDomain
 	for _, a := range a.WebRedirectDomains {
 		webRedirectDomains = append(webRedirectDomains, domains.WebRedirectDomain{MatchedDomain: a.parse()})
 	}
 	d.WebRedirectDomains = webRedirectDomains
-
+	
 	var certSANs []domains.CertSansDomain
 	for _, a := range a.CertSANs {
 		certSANs = append(certSANs, domains.CertSansDomain{MatchedDomain: a.parse()})
 	}
 	d.CertSANs = certSANs
-
+	
 	var sitemapWebDomains []domains.SitemapWebDomain
 	for _, a := range a.SitemapWebDomains {
 		sitemapWebDomains = append(sitemapWebDomains, domains.SitemapWebDomain{MatchedDomain: a.parse()})
 	}
 	d.SitemapWebDomains = sitemapWebDomains
-
+	
 	var sitemapContactDomains []domains.SitemapContactDomain
 	for _, a := range a.SitemapContactDomains {
 		sitemapContactDomains = append(sitemapContactDomains, domains.SitemapContactDomain{MatchedDomain: a.parse()})
 	}
 	d.SitemapContactDomains = sitemapContactDomains
-
+	
 	return d
 }
 

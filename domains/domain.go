@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
+	
 	"github.com/temoto/robotstxt"
 	"github.com/weppos/publicsuffix-go/publicsuffix"
 )
@@ -30,13 +30,14 @@ type Domain struct {
 	SOARecords            []SOARecord            `json:"soaRecords"`
 	Sitemaps              []*Sitemap             `json:"sitemaps"`
 	WebRedirectDomains    []WebRedirectDomain    `json:"webRedirectDomains"`
+	CertOrgNames          []string               `json:"certOrgNames,omitempty"`
 	CertSANs              []CertSansDomain       `json:"certSANs"`
 	SitemapWebDomains     []SitemapWebDomain     `json:"sitemapWebDomains"`
 	SitemapContactDomains []SitemapContactDomain `json:"sitemapContactDomains"`
-
+	
 	sitemapURLs  []string
 	contactPages []string
-
+	
 	*robotstxt.RobotsData
 }
 

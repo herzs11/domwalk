@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
-
+	
 	"cloud.google.com/go/bigquery"
 	"github.com/herzs11/domwalk/domains"
 	"google.golang.org/api/googleapi"
@@ -84,6 +84,7 @@ func (bq *BQStore) recreateMergeTable(ctx context.Context) error {
 					mx_records              ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, mx STRING>>,
 					soa_records             ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, ns STRING, mbox STRING,
 															serial INT64>>,
+					cert_org_names ARRAY<STRING>,
 					sitemaps                ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, sitemap_loc STRING>>,
 					web_redirect_domains    ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, domain_name STRING>>,
 					cert_sans               ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, domain_name STRING>>,
@@ -121,6 +122,7 @@ func (bq *BQStore) PutDomains(ctx context.Context, doms []*domains.Domain) error
 									t.sitemaps = s.sitemaps,
 									t.web_redirect_domains = s.web_redirect_domains,
 									t.cert_sans = s.cert_sans,
+									t.cert_org_names = s.cert_org_names,
 									t.sitemap_web_domains = s.sitemap_web_domains,
 									t.sitemap_contact_domains = s.sitemap_contact_domains
 					WHEN NOT MATCHED THEN INSERT ROW;`,
