@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/herzs11/domwalk/domains"
+	"github.com/herzs11/go-doms/domain"
 )
 
 type RequestParams struct {
@@ -13,5 +13,5 @@ type RequestParams struct {
 
 type ProcessConfig struct {
 	Workers int `json:"workers,omitempty"`
-	domains.EnrichmentConfig
+	domain.EnrichmentConfig
 }

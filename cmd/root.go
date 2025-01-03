@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/herzs11/domwalk/domains"
+	"github.com/herzs11/go-doms/domain"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -78,7 +78,7 @@ var rootCmd = &cobra.Command{
 		}
 		processConfig = ProcessConfig{
 			Workers: workers,
-			EnrichmentConfig: domains.EnrichmentConfig{
+			EnrichmentConfig: domain.EnrichmentConfig{
 				CertSans:         cs,
 				DNS:              dns,
 				Sitemap:          sm,

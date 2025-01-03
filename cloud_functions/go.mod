@@ -1,8 +1,11 @@
 module dev.azure.com/Unum/Mkt_Analytics/_git/cloud_functions
 
-go 1.22.1
+go 1.22.10
+
+toolchain go1.23.1
 
 replace github.com/herzs11/domwalk => ../../domwalk
+
 replace dev.azure.com/Unum/Mkt_Analytics/_git/cloud_functions => ../cloud_functions
 
 require (
@@ -20,7 +23,7 @@ require (
 	cloud.google.com/go/iam v1.2.0 // indirect
 	github.com/apache/arrow/go/v15 v15.0.2 // indirect
 	github.com/cloudevents/sdk-go/v2 v2.15.2 // indirect
-	github.com/fatih/color v1.17.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -31,6 +34,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
+	github.com/herzs11/go-doms v0.0.0-20241231185813-d4bc647e61f5 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

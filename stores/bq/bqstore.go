@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"sync"
 	"time"
-	
+
 	"cloud.google.com/go/bigquery"
-	"github.com/herzs11/domwalk/domains"
+	"github.com/herzs11/go-doms/domain"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 )
@@ -63,39 +63,22 @@ func NewBQStore(projectID, datasetID, tableName string) (*BQStore, error) {
 	}, nil
 }
 
-func (bq *BQStore) recreateMergeTable(ctx context.Context) error {
-	qry := `create table domwalk.domain_mrg
-				(
-					created_at              TIMESTAMP,
-					updated_at              TIMESTAMP,
-					domain_name             STRING,
-					non_public_domain       BOOL,
-					hostname                STRING,
-					subdomain               STRING,
-					suffix                  STRING,
-					successful_web_landing  BOOL,
-					web_redirect_url_final  STRING,
-					last_ran_web_redirect   TIMESTAMP,
-					last_ran_dns            TIMESTAMP,
-					last_ran_cert_sans      TIMESTAMP,
-					last_ran_sitemap_parse  TIMESTAMP,
-					a_records               ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, ip STRING>>,
-					aaaa_records            ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, ip_v6 STRING>>,
-					mx_records              ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, mx STRING>>,
-					soa_records             ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, ns STRING, mbox STRING,
-															serial INT64>>,
-					cert_org_names ARRAY<STRING>,
-					sitemaps                ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, sitemap_loc STRING>>,
-					web_redirect_domains    ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, domain_name STRING>>,
-					cert_sans               ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, domain_name STRING>>,
-					sitemap_web_domains     ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, domain_name STRING>>,
-					sitemap_contact_domains ARRAY <STRUCT < created_at TIMESTAMP, updated_at TIMESTAMP, domain_name STRING>>
-				);`
-	_, err := bq.Client.Query(qry).Read(ctx)
-	return err
+func (bq *BQStore) createDomainTable(ctx context.Context, tableName string) error {
+	schema, err := bigquery.InferSchema(DomainBQ{})
+	if err != nil {
+		return err
+	}
+	metaData := &bigquery.TableMetadata{
+		Schema: schema,
+	}
+	tableRef := bq.Dataset.Table(tableName)
+	if err := tableRef.Create(ctx, metaData); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (bq *BQStore) PutDomains(ctx context.Context, doms []*domains.Domain) error {
+func (bq *BQStore) PutDomains(ctx context.Context, doms []*domain.Domain) error {
 	var dbq []DomainBQ
 	now := time.Now()
 	for _, d := range doms {
@@ -115,16 +98,20 @@ func (bq *BQStore) PutDomains(ctx context.Context, doms []*domains.Domain) error
 									t.last_ran_dns = GREATEST(t.last_ran_dns, s.last_ran_dns),
 									t.last_ran_cert_sans = GREATEST(t.last_ran_cert_sans, s.last_ran_cert_sans),
 									t.last_ran_sitemap_parse = GREATEST(t.last_ran_sitemap_parse, s.last_ran_sitemap_parse),
+									t.last_ran_whois = GREATEST(t.last_ran_whois, s.last_ran_whois),
+									t.last_ran_reverse_whois = GREATEST(t.last_ran_reverse_whois, s.last_ran_reverse_whois),
 									t.a_records = s.a_records,
 									t.aaaa_records = s.aaaa_records,
 									t.mx_records = s.mx_records,
 									t.soa_records = s.soa_records,
 									t.sitemaps = s.sitemaps,
+									t.whois_data = s.whois_data,
 									t.web_redirect_domains = s.web_redirect_domains,
 									t.cert_sans = s.cert_sans,
 									t.cert_org_names = s.cert_org_names,
 									t.sitemap_web_domains = s.sitemap_web_domains,
-									t.sitemap_contact_domains = s.sitemap_contact_domains
+									t.sitemap_contact_domains = s.sitemap_contact_domains,
+									t.reverse_whois_domains = s.reverse_whois_domains
 					WHEN NOT MATCHED THEN INSERT ROW;`,
 			bq.Dataset.DatasetID, bq.Table.TableID,
 		),
@@ -138,8 +125,8 @@ func (bq *BQStore) PutDomains(ctx context.Context, doms []*domains.Domain) error
 	return err
 }
 
-func (bq *BQStore) GetDomains(ctx context.Context, query string) ([]*domains.Domain, error) {
-	var doms []*domains.Domain
+func (bq *BQStore) GetDomains(ctx context.Context, query string) ([]*domain.Domain, error) {
+	var doms []*domain.Domain
 	bq.Mut.RLock()
 	q := bq.Client.Query(query)
 	it, err := q.Read(ctx)
@@ -149,7 +136,7 @@ func (bq *BQStore) GetDomains(ctx context.Context, query string) ([]*domains.Dom
 	for {
 		var d DomainBQ
 		err := it.Next(&d)
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
 		if err != nil {
@@ -161,8 +148,8 @@ func (bq *BQStore) GetDomains(ctx context.Context, query string) ([]*domains.Dom
 	return doms, nil
 }
 
-func (bq *BQStore) GetDomainsByNames(ctx context.Context, doms []string) ([]*domains.Domain, error) {
-	var domObjs []*domains.Domain
+func (bq *BQStore) GetDomainsByNames(ctx context.Context, doms []string) ([]*domain.Domain, error) {
+	var domObjs []*domain.Domain
 	var domsFound = make(map[string]bool)
 	bq.Mut.RLock()
 	qry := bq.Client.Query(
@@ -193,7 +180,7 @@ func (bq *BQStore) GetDomainsByNames(ctx context.Context, doms []string) ([]*dom
 	for _, dom := range doms {
 		if _, exists := domsFound[dom]; !exists {
 			domsFound[dom] = true
-			d, err := domains.NewDomain(dom)
+			d, err := domain.NewDomain(dom)
 			if err != nil {
 				log.Printf("Error parsing domain %s: %s\n", dom, err)
 				continue
